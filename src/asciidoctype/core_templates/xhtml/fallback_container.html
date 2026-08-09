@@ -1,0 +1,4 @@
+<div class="adoc-fallback node-${node/name | 'unknown'}">
+    <tal:block tal:repeat="block node/blocks | node/inlines | nothing"
+               tal:replace="structure renderer/render(block, ctx)" />
+</div>

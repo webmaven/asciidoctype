@@ -1,0 +1,5 @@
+<p tal:attributes="id node/attributes/id | nothing"
+   class="${node/attributes/role | ''}">
+    <tal:block tal:repeat="inline node/inlines | nothing" 
+               tal:replace="structure renderer/render(inline, ctx)" />
+</p>
