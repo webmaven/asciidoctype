@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title tal:content="node/header/title | 'Document'"></title>
+</head>
+<body>
+    <div id="header" tal:condition="node/header/title | nothing">
+        <h1 tal:content="node/header/title"></h1>
+    </div>
+    <div id="content">
+        <tal:block tal:repeat="block node/blocks | nothing"
+                   tal:replace="structure renderer/render(block, ctx)" />
+    </div>
+</body>
+</html>
