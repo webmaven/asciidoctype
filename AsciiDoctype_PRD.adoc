@@ -1,0 +1,145 @@
+= Product Requirement Document (PRD): AsciiDoctype
+
+== 1. Overview and Purpose
+AsciiDoctype is a standalone, pure-Python HTML and XHTML rendering library. It acts as the bridging rendering layer between a structured document semantic graph and text-based markup specifications.
+Specifically, it consumes the Abstract Semantic Graph (ASG) produced by AsciiDoctrine and lowers those nodes into highly optimized string fragments using Chameleon templates.
+AsciiDoctype provides a unified rendering API for downstream orchestrators like Golem (a Static Site Generator) or custom compilation tools. It explicitly decouples the document syntax tree from any specific presentation format or output storage engine.
+
+....
++--------------------+      +------------------+      +---------------------+
+|   AsciiDoctrine    | ---> |   AsciiDoctype   | ---> |     Golem / EPUB    |
+| (Pure Semantic ASG)|      | (Chameleon Loops)|      | (Orchestrator / I/O)|
++--------------------+      +------------------+      +---------------------+
+....
+
+== 2. Core Objectives
+
+* Isolate Formatting Logic: Keep all knowledge of HTML5 tags, XHTML namespaces, and layout structures out of the core semantic parser (AsciiDoctrine).
+* Format Agnosticism (HTML5 & XHTML): Enable identical semantic node graphs to generate loose, browser-friendly HTML5 or strict, self-closing XHTML (for EPUB/Kindle ecosystems).
+* Provide Headless Primitives: Deliver a rendering architecture optimized for extreme theme flexibility, treating structural components as un-styled data objects.
+* Maximize Bytecode Execution Speed: Leverage Chameleon's pre-compiled Python bytecode properties to safely process deeply nested, recursive node structures at near-native speeds.
+
+== 3. Scope and Boundaries
+
+=== In Scope
+
+* Recursive translation of arbitrary AsciiDoctrine ASG nodes into target markup strings.
+* Dual rendering specifications: HTML5 and XHTML.
+* Native fallback template registries for all core AsciiDoc block types (Paragraphs, Sections, Lists, Tables, Source Blocks, Sidebars).
+* Seamless integration with external theme directories provided by downstream orchestrators.
+* Support for explicit namespace properties required by standard e-reader validation engines. [1, 2, 3, 4] 
+
+=== Out of Scope
+
+* No File I/O: AsciiDoctype does not scan directories, discover files, write to disks, or manage static assets. It accepts in-memory structures and emits in-memory strings.
+* No Link Validation: Cross-reference validation, syntax mapping, and token structural checks are completely handled upstream by AsciiDoctrine's multi-pass phase.
+* No Visual Styling: It does not ship CSS frameworks, JavaScript runtimes, or default typographic visual aesthetics. It outputs clean, un-styled semantic markup blocks.
+
+== 4. Technical Architecture and Interface Specs
+
+=== 4.1 Component Architecture Diagram
+
+....
++-------------------------------------------------------------+
+|                        AsciiDoctype                         |
+|                                                             |
+|   +-----------------------+      +-----------------------+  |
+|   |    HTML5 Target       |      |     XHTML Target      |  |
+|   |  (Template Suite)     |      |  (Namespace / Strict) |  |
+|   +-----------------------+      +-----------------------+  |
+|               |                              |              |
+|               +--------------+---------------+              |
+|                              |                              |
+|                              v                              |
+|               +------------------------------+              |
+|               |    Recursive Node Matcher    |              |
+|               |    & Chameleon Bytecode Loop |              |
+|               +------------------------------+              |
++------------------------------+------------------------------+
+                               ^
+                               | (Feeds Theme Overrides)
+                    +--------------------+
+                    |  Golem Core Engine |
+                    +--------------------+
+....
+
+=== 4.2 Core API Contract (Python)
+The interface must be dead simple, exposing an immutable execution flow.
+
+[source,python]
+----
+from typing import Dict, Any, List, Optional
+from pathlib import Path
+
+class AsciiDoctypeRenderer:
+    def __init__(
+        self, 
+        target_format: str = "html5", 
+        search_paths: Optional[List[Path]] = None
+    ):
+        """
+        Initializes the rendering engine with format choices and templates.
+        
+        :param target_format: Explicit choice between 'html5' or 'xhtml'
+        :param search_paths: Ordered list of directory Paths for template resolution.
+                             Allows themes to take precedence over core fallbacks.
+        """
+        self.target_format = target_format.lower()
+        if self.target_format not in ("html5", "xhtml"):
+            raise ValueError("Target format must be 'html5' or 'xhtml'")
+            
+        self.search_paths = search_paths or []
+        self._initialize_chameleon_loader()
+
+    def render_node(self, node: Any, context: Optional[Dict[str, Any]] = None) -> str:
+        """
+        Recursively translates an isolated ASG node into text markup.
+        
+        :param node: An individual AsciiDoctrine ASG node instance
+        :param context: Arbitrary external configurations passed to layout scopes
+        :return: A safe, fully rendered HTML/XHTML string fragment
+        """
+        pass
+
+    def render_document(self, asg_root: Any, context: Optional[Dict[str, Any]] = None) -> str:
+        """
+        Lower a complete document graph into a master shell layout.
+        
+        :param asg_root: The root node of a complete AsciiDoctrine semantic graph
+        :param context: Dict containing global nav data, site settings, or design tokens
+        :return: A complete HTML5/XHTML document string
+        """
+        pass
+----
+
+== 5. Functional Requirements
+
+=== 5.1 Format Target Specifications
+
+* HTML5 Mode: Templates use modern standard notation. Avoids self-closing slashes on void components (e.g., outputs `<br>`, `<img>`, `<meta>`).
+* XHTML Mode: Templates strictly validate against XML rules. Enforces lowercase tag parameters, fully explicitly quoted attributes, and strict self-closing slashes on void tags (e.g., outputs `<br />`, `<img />`, `<meta />`). Inject explicit namespaces (`xmlns="http://w3.org/1999/xhtml"`) automatically into document root tags.
+
+=== 5.2 Recursive Component Resolution
+
+* AsciiDoctype must inspect the incoming node class structure to find matching templates dynamically.
+* If a node named `SidebarNode` is encountered, the lookup loop evaluates the `search_paths` sequence to check for `sidebar.html`.
+* If a theme does not override a specific layout asset, the loop securely drops back to AsciiDoctype’s internal bundled component fallbacks.
+
+=== 5.3 Safe Structural Injections
+
+* To avoid escaping brackets on child block elements during recursive template processing, all node render lookups mapped inside Chameleon files must explicitly leverage the `structure` keyword expression modifier.
+
+[source,xml]
+----
+<!-- Inside structural component loops -->
+<div class="content-block">
+    <tal:block tal:repeat="child node/children" 
+               tal:replace="structure renderer/render_node(child, context)" />
+</div>
+----
+
+== 6. Non-Functional Requirements & Performance Targets
+
+* Zero Double Parsing Memory Cost: The renderer must read attributes directly out of memory instances without forcing any modification, mutation, or deep-cloning of the incoming AsciiDoctrine semantic graph nodes.
+* Linear Time Scaling: Rendering cost should scale linearly O(N) directly relative to the number of nodes present within the document tree.
+* Fault Isolation: If a specific custom block configuration throws a rendering exception, the engine should gracefully report the faulty node index properties (line numbers, block IDs) instead of crashing silently with a generic, unhelpful string error stack.
