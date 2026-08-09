@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "asciidoctype"
+version = "0.1.0"
+description = "A document processor converting AsciiDoc documents into styled documents using Chameleon ZPT templates."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "chameleon>=4.0.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
