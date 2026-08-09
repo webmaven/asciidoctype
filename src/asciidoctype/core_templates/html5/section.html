@@ -1,0 +1,14 @@
+<section class="adoc-section level-${node/level}" 
+         tal:attributes="id node/attributes/id | nothing">
+    <tal:block tal:define="heading_tag string:h${node/level + 1}">
+        <tal:heading tal:omit-tag="not:heading_tag" tal:attributes="tag heading_tag">
+            <tal:block tal:repeat="title_node node/title | nothing" 
+                       tal:replace="structure renderer/render(title_node, ctx)" />
+        </tal:heading>
+    </tal:block>
+    
+    <div class="section-blocks">
+        <tal:block tal:repeat="block node/blocks | nothing" 
+                   tal:replace="structure renderer/render(block, ctx)" />
+    </div>
+</section>
