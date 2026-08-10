@@ -1,0 +1,235 @@
+= Contributing to AsciiDoctype
+:toc: left
+:toc-title: Contents
+:toclevels: 3
+:icons: font
+:source-highlighter: highlight.js
+
+Thank you for considering a contribution to AsciiDoctype! This document describes
+the project's expectations, workflow, and standards so your contribution can be
+reviewed and merged smoothly.
+
+== Code of Conduct
+
+All contributors are expected to interact respectfully and constructively.
+Harassment or hostile behaviour of any kind will not be tolerated.
+
+== Development Environment
+
+=== Prerequisites
+
+* Python 3.9 or later
+* `git`
+* `gh` (GitHub CLI, preferred for cloning/branching)
+
+=== Setup
+
+[source,bash]
+----
+gh repo clone webmaven/asciidoctype
+cd asciidoctype
+
+python -m venv .venv
+source .venv/bin/activate          # macOS / Linux
+# .venv\Scripts\activate.bat       # Windows
+
+pip install -e .[test]
+pytest -v                          # should show 19 passed
+----
+
+== Contribution Workflow
+
+=== 1. Open an Issue First
+
+For anything beyond a trivial typo fix, open a GitHub issue to discuss the
+change before writing code. This prevents duplicated effort and ensures the
+direction fits the project's goals.
+
+=== 2. Fork and Branch
+
+[source,bash]
+----
+gh repo fork webmaven/asciidoctype --clone
+cd asciidoctype
+git checkout -b feat/my-feature     # or fix/my-bugfix
+----
+
+Branch naming convention:
+
+[cols="1,2",options="header"]
+|===
+|Prefix |Use for
+
+|`feat/`
+|New template, new node support, new API capability
+
+|`fix/`
+|Bug fix for existing behaviour
+
+|`docs/`
+|Documentation-only changes
+
+|`chore/`
+|Build, CI, tooling changes
+
+|`refactor/`
+|Internal restructuring with no external behaviour change
+|===
+
+=== 3. Red/Green TDD
+
+AsciiDoctype uses strict Test-Driven Development:
+
+. Write a failing test that specifies the expected behaviour.
+. Run `pytest -v` to confirm it fails.
+. Write the minimum implementation to make the test pass.
+. Run `pytest -v` to confirm all tests pass.
+. Clean up and commit.
+
+[IMPORTANT]
+====
+Do not submit a pull request without tests. Pull requests that reduce test
+coverage will not be merged.
+====
+
+=== 4. Adding a New Node Template
+
+The most common contribution type is adding a template for a node listed as
+🔲 Planned in link:ARCHITECTURE.adoc[ARCHITECTURE.adoc].
+
+. Identify the ASG node schema in `ARCHITECTURE.adoc §5`.
+. Create `src/asciidoctype/core_templates/html5/<node_name>.html`.
+. Create `src/asciidoctype/core_templates/xhtml/<node_name>.html`.
+. Write tests in `tests/test_html5_<node_name>.py` and optionally
+  `tests/test_xhtml_<node_name>.py`.
+. Update the coverage status in `ARCHITECTURE.adoc` from 🔲 to ✅.
+
+==== Template Guidelines
+
+* Use Python-style attribute access in expressions:
+  `node.get('attributes', {}).get('id')` rather than TAL path expressions
+  (`node/attributes/id`) which do not work with plain `dict` objects.
+* Always use `structure renderer.render(child, ctx)` when emitting child
+  node output. Without `structure`, HTML brackets are escaped.
+* Avoid newlines inside inline element templates (span, text, ref). Chameleon
+  preserves whitespace, and stray newlines produce unwanted gaps in output.
+* Both `html5/` and `xhtml/` templates are required for every node.
+  The XHTML variant must use self-closing void elements (`<br />`).
+
+==== Example: Minimal Template Pair
+
+`src/asciidoctype/core_templates/html5/quote.html`:
+
+[source,xml]
+----
+<blockquote tal:attributes="id node.get('attributes', {}).get('id');
+                             class node.get('attributes', {}).get('role')">
+    <tal:block tal:repeat="block node.get('blocks', [])"
+               tal:replace="structure renderer.render(block, ctx)" />
+</blockquote>
+----
+
+`src/asciidoctype/core_templates/xhtml/quote.html`:
+
+Same content — the XHTML `document.html` wrapper provides the namespace and
+DOCTYPE; inner block templates need no XHTML-specific changes unless they
+contain void elements.
+
+=== 5. Commit Messages
+
+Follow the https://www.conventionalcommits.org/[Conventional Commits] spec:
+
+[cols="1,2",options="header"]
+|===
+|Prefix |Use for
+
+|`feat:`
+|New feature, new template
+
+|`fix:`
+|Bug correction
+
+|`docs:`
+|Documentation update
+
+|`test:`
+|Tests only, no production code
+
+|`chore:`
+|Tooling, build, CI
+
+|`refactor:`
+|Restructuring without behaviour change
+|===
+
+Examples:
+
+----
+feat: implement list and listItem templates for HTML5 and XHTML
+fix: handle missing attributes dict in section template
+docs: document ref node schema in ARCHITECTURE.adoc
+test: add coverage for xhtml listing block rendering
+----
+
+=== 6. Pull Request
+
+[source,bash]
+----
+git push origin feat/my-feature
+gh pr create --fill
+----
+
+Your pull request description should include:
+
+* What the change does.
+* Which issue it resolves (if any): `Closes #N`.
+* Test results (paste the `pytest -v` output).
+
+== Standards
+
+=== Code Style
+
+* Follow https://peps.python.org/pep-0008/[PEP 8].
+* Type-annotate all public functions and methods.
+* Keep functions small and single-purpose.
+* No global mutable state.
+
+=== Template Style
+
+* One template per node type, one file per pipeline.
+* No CSS or JavaScript in templates — AsciiDoctype is a headless renderer.
+* All attribute access defensive: `node.get('key', default)` never bare `node['key']`
+  (unless a missing key should propagate as an error, like `node['value']` in
+  `text.html`).
+
+=== Documentation
+
+* Update `ARCHITECTURE.adoc §5` when adding or changing node support.
+* Update `README.adoc` Quick Start examples if the public API changes.
+* All docs are AsciiDoc (`.adoc`). No Markdown files should be added.
+
+== Running the Full Quality Check
+
+[source,bash]
+----
+# All tests
+pytest -v
+
+# Test coverage
+pytest --cov=asciidoctype --cov-report=term-missing
+----
+
+Target: maintain or improve the current 94% coverage.
+
+== What We Are NOT Looking For
+
+* CSS, JavaScript, or any visual styling.
+* Features that write to disk.
+* Features that modify the incoming ASG node dicts.
+* Features that couple AsciiDoctype to a specific orchestrator (Golem, etc.).
+* Markdown documentation files.
+
+== Questions?
+
+Open a discussion on GitHub:
+https://github.com/webmaven/asciidoctype/discussions

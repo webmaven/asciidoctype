@@ -1,0 +1,670 @@
+= AsciiDoctype Architecture
+:toc: left
+:toc-title: Contents
+:toclevels: 4
+:icons: font
+:source-highlighter: highlight.js
+
+This document describes the internal design, rendering pipeline, template
+resolution strategy, and ASG node coverage of AsciiDoctype.
+
+== 1. System Position in the Ecosystem
+
+AsciiDoctype occupies the **formatting layer** between a semantic document
+parser and an output orchestrator:
+
+....
+┌─────────────────────┐
+│  Author (*.adoc)    │
+└──────────┬──────────┘
+           │  raw AsciiDoc text
+           ▼
+┌─────────────────────┐
+│   AsciiDoctrine     │  Parser + TCK-compliant semantic graph
+│  (ASG producer)     │
+└──────────┬──────────┘
+           │  Python dict (via to_dict())
+           ▼
+┌─────────────────────┐
+│   AsciiDoctype      │  ← THIS LIBRARY
+│ (Template renderer) │  Chameleon ZPT templates → HTML5 or XHTML strings
+└──────────┬──────────┘
+           │  markup string fragments / full document string
+           ▼
+┌──────────────────────────────┐
+│  Golem SSG / EPUB Compiler / │  Orchestrator: writes files, manages assets
+│  Custom downstream tool      │
+└──────────────────────────────┘
+....
+
+**Key invariant:** AsciiDoctype never reads from disk (beyond template lookup),
+never writes to disk, and never modifies the ASG nodes it receives. It is a
+pure in-memory transformation — dict in, string out.
+
+== 2. Core Components
+
+=== 2.1 `AsciiDoctypeRenderer`
+
+The single public class. Constructed once per rendering session (or once per
+target format) and reused across many `render()` calls.
+
+[source,python]
+----
+renderer = AsciiDoctypeRenderer(
+    target_format="html5",        # or "xhtml"
+    search_paths=[Path("theme/")], # optional, ordered
+)
+----
+
+**Responsibilities:**
+
+* Validate `target_format` and raise `ValueError` on bad values.
+* Build the ordered search path list, appending the bundled core fallback last.
+* Initialise a `chameleon.PageTemplateLoader` over the resolved paths.
+* Dispatch each incoming ASG node dict to the correct template via `render()`.
+* Wrap any template runtime error in `AsciiDoctypeRenderingError` for clean
+  diagnostics.
+
+=== 2.2 `AsciiDoctypeRenderingError`
+
+A typed sentinel exception that carries the failing node name, the target
+pipeline, and the root cause. Callers can catch this to implement graceful
+degradation without catching every possible Python exception.
+
+=== 2.3 Chameleon `PageTemplateLoader`
+
+Manages the compiled-bytecode template cache. Templates are compiled to Python
+bytecode on first use; subsequent calls reuse the cache. This gives near-native
+rendering speed even for large, deeply-nested documents.
+
+== 3. Template Resolution Pipeline
+
+Template lookup follows a strict precedence order at every `render()` call:
+
+....
+Caller search_paths[0]   →  search_paths[1]  →  …  →  core_templates/<fmt>/
+(user overrides)            (active theme)          (bundled fallback)
+....
+
+The algorithm:
+
+1. Compute `node["name"]` (e.g. `"paragraph"`).
+2. Call `self.loader["paragraph.html"]`.
+3. Chameleon's `PageTemplateLoader` searches its path list in order and returns
+   the first match.
+4. If no match is found anywhere, `ValueError` is caught internally and
+   `fallback_container.html` is used instead.
+5. The resolved template is executed with `(node=node, renderer=self, ctx=ctx)`.
+
+This means a theme can override any single template file without providing all
+of them — missing overrides silently fall back to the bundled core.
+
+=== 3.1 Template Variables Available in Every Template
+
+[cols="1,1,3",options="header"]
+|===
+|Variable |Type |Description
+
+|`node`
+|`dict`
+|The current ASG node dictionary being rendered. Shape varies by node type
+(see <<asg-node-schemas>>).
+
+|`renderer`
+|`AsciiDoctypeRenderer`
+|The renderer instance. Used to call `renderer.render(child, ctx)` for
+recursive child rendering.
+
+|`ctx`
+|`dict`
+|Arbitrary caller-supplied context (e.g. site settings, base URL). Empty dict
+if not provided. Templates may read from it but must not mutate it.
+|===
+
+=== 3.2 Recursive Child Rendering in Templates
+
+All child node lists are rendered by calling back into the renderer from inside
+the template. The `structure` modifier is **mandatory** to prevent Chameleon
+from HTML-escaping the returned markup string:
+
+[source,xml]
+----
+<tal:block tal:repeat="inline node.get('inlines', [])"
+           tal:replace="structure renderer.render(inline, ctx)" />
+----
+
+Without `structure`, child tags would appear as literal escaped text
+(`&lt;strong&gt;`) instead of live markup.
+
+== 4. Dual Rendering Pipelines
+
+=== 4.1 HTML5 Pipeline
+
+Target: modern browsers, progressive web apps.
+
+* Void elements have no closing slash (`<br>`, `<img>`, `<meta>`).
+* Document opens with `<!DOCTYPE html>`.
+* No XML declaration or namespace binding.
+
+=== 4.2 XHTML 1.0 Strict Pipeline
+
+Target: EPUB 2/3 readers, Kindle, strict XML parsers.
+
+* XML declaration: `<?xml version="1.0" encoding="UTF-8"?>`
+* DOCTYPE: `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" …>`
+* Root namespace: `<html xmlns="http://www.w3.org/1999/xhtml">`
+* `<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />`
+* All void elements explicitly self-closed.
+
+== [[asg-node-schemas]]5. ASG Node Schemas and Template Coverage
+
+All nodes are Python dicts produced by AsciiDoctrine's `to_dict()` method.
+AsciiDoctype receives them as plain dictionaries — it has no knowledge of any
+class hierarchy.
+
+=== 5.1 Block-Level Nodes
+
+==== `document`
+
+[cols="1,1,3",options="header"]
+|===
+|Key |Type |Notes
+
+|`name`
+|`"document"`
+|Fixed discriminator.
+
+|`type`
+|`"block"`
+|Fixed.
+
+|`header`
+|`dict`
+|Contains `"title"` (string). May be empty.
+
+|`blocks`
+|`List[dict]`
+|Top-level block children (sections, paragraphs, …).
+
+|`attributes`
+|`dict`
+|Document-level attribute entries.
+|===
+
+Template: `document.html` +
+HTML5 output: Full `<!DOCTYPE html>`, `<html>`, `<head>`, `<title>`, `<body>`. +
+XHTML output: As above plus XML declaration, DOCTYPE, and namespace.
+
+**Coverage status:** ✅ Implemented
+
+---
+
+==== `section`
+
+[cols="1,1,3",options="header"]
+|===
+|Key |Type |Notes
+
+|`name`
+|`"section"`
+|Fixed.
+
+|`type`
+|`"block"`
+|Fixed.
+
+|`level`
+|`int`
+|Nesting depth starting at 1. Level 1 → `<h2>`, level 2 → `<h3>`, etc.
+
+|`title`
+|`List[dict]`
+|Inline nodes forming the heading text.
+
+|`blocks`
+|`List[dict]`
+|Child blocks within this section.
+
+|`attributes`
+|`dict`
+|Optional `id`, `role`, etc.
+|===
+
+Template: `section.html` +
+Output: `<section class="adoc-section level-{N}" id="…">` wrapping an
+`<h{N+1}>` heading and a `<div class="section-blocks">` child container.
+
+**Coverage status:** ✅ Implemented (levels 1–6)
+
+---
+
+==== `paragraph`
+
+[cols="1,1,3",options="header"]
+|===
+|Key |Type |Notes
+
+|`name`
+|`"paragraph"`
+|Fixed.
+
+|`type`
+|`"block"`
+|Fixed.
+
+|`inlines`
+|`List[dict]`
+|Inline content nodes.
+
+|`attributes`
+|`dict`
+|Optional `id`, `role`.
+|===
+
+Template: `paragraph.html` +
+Output: `<p id="…" class="…">…inline content…</p>`
+
+**Coverage status:** ✅ Implemented
+
+---
+
+==== `listing`
+
+[cols="1,1,3",options="header"]
+|===
+|Key |Type |Notes
+
+|`name`
+|`"listing"`
+|Fixed.
+
+|`type`
+|`"block"`
+|Fixed.
+
+|`form`
+|`"delimited"`
+|Block form marker.
+
+|`delimiter`
+|`str`
+|The opening delimiter string (e.g. `"----"`).
+
+|`value`
+|`str`
+|Pre-formatted source code text content.
+
+|`title`
+|`List[dict]`
+|Optional caption inline nodes.
+
+|`attributes`
+|`dict`
+|Optional `id`, `language`.
+|===
+
+Template: `listing.html` +
+Output: `<div class="listingblock">` containing optional `<div class="title">`,
+then `<pre class="highlight {lang}"><code class="language-{lang}">…</code></pre>`.
+
+**Coverage status:** ✅ Implemented
+
+---
+
+==== `list` _(planned)_
+
+[cols="1,1,3",options="header"]
+|===
+|Key |Type |Notes
+
+|`name`
+|`"list"`
+|Fixed.
+
+|`variant`
+|`"unordered"` or `"ordered"`
+|Drives `<ul>` vs. `<ol>`.
+
+|`marker`
+|`str`
+|Original source marker (`*`, `.`, `-`, …).
+
+|`items`
+|`List[dict]`
+|`listItem` node dicts.
+|===
+
+Template: `list.html` — **not yet implemented.** Falls back to
+`fallback_container.html`. Contributions welcome; see
+link:CONTRIBUTING.adoc[CONTRIBUTING.adoc].
+
+**Coverage status:** 🔲 Planned
+
+---
+
+==== `listItem` _(planned)_
+
+[cols="1,1,3",options="header"]
+|===
+|Key |Type |Notes
+
+|`name`
+|`"listItem"`
+|Fixed.
+
+|`principal`
+|`List[dict]`
+|Primary inline content.
+
+|`blocks`
+|`List[dict]`
+|Nested continuation blocks.
+|===
+
+Template: `list_item.html` — **not yet implemented.**
+
+**Coverage status:** 🔲 Planned
+
+---
+
+==== `admonition` _(planned)_
+
+[cols="1,1,3",options="header"]
+|===
+|Key |Type |Notes
+
+|`name`
+|`"admonition"`
+|Fixed.
+
+|`variant`
+|`"note"`, `"tip"`, `"important"`, `"warning"`, `"caution"`
+|Admonition label.
+
+|`blocks`
+|`List[dict]`
+|Body blocks.
+
+|`title`
+|`List[dict]`
+|Optional title inlines.
+|===
+
+Template: `admonition.html` — **not yet implemented.**
+
+**Coverage status:** 🔲 Planned
+
+---
+
+==== `table` _(planned)_
+
+[cols="1,1,3",options="header"]
+|===
+|Key |Type |Notes
+
+|`name`
+|`"table"`
+|Fixed.
+
+|`rows`
+|`List[List[dict]]`
+|Row lists containing cell node lists.
+
+|`header_rows`
+|`List[List[dict]]`
+|Rows to render in `<thead>`.
+
+|`attributes`
+|`dict`
+|Optional `id`, `cols`, `options`.
+|===
+
+Template: `table.html` — **not yet implemented.**
+
+**Coverage status:** 🔲 Planned
+
+---
+
+==== `sidebar` _(planned)_
+
+Template: `sidebar.html` — **not yet implemented.**
+
+**Coverage status:** 🔲 Planned
+
+---
+
+==== `example` _(planned)_
+
+Template: `example.html` — **not yet implemented.**
+
+**Coverage status:** 🔲 Planned
+
+---
+
+==== `quote` _(planned)_
+
+Template: `quote.html` — **not yet implemented.**
+
+**Coverage status:** 🔲 Planned
+
+---
+
+==== `image` _(planned)_
+
+Template: `image.html` — **not yet implemented.** Void element differs between
+HTML5 and XHTML pipelines.
+
+**Coverage status:** 🔲 Planned
+
+---
+
+=== 5.2 Inline-Level Nodes
+
+==== `text` (leaf node)
+
+[cols="1,1,3",options="header"]
+|===
+|Key |Type |Notes
+
+|`name`
+|`"text"`
+|Fixed.
+
+|`type`
+|`"string"`
+|Fixed. Distinguishes leaf nodes from structural nodes.
+
+|`value`
+|`str`
+|Raw text content. Emitted verbatim (no HTML escaping performed by the template
+itself — escaping is handled upstream by AsciiDoctrine).
+|===
+
+Template: `text.html` +
+Output: The bare string `node['value']`. No wrapping element.
+
+**Coverage status:** ✅ Implemented
+
+---
+
+==== `span`
+
+[cols="1,1,3",options="header"]
+|===
+|Key |Type |Notes
+
+|`name`
+|`"span"`
+|Fixed.
+
+|`type`
+|`"inline"`
+|Fixed.
+
+|`variant`
+|`"strong"`, `"emphasis"`, `"code"`, `"mark"`, or absent
+|Drives element selection. Missing or unrecognised → `<span>`.
+
+|`form`
+|`"constrained"` or `"unconstrained"`
+|Passed through; informational for downstream consumers.
+
+|`inlines`
+|`List[dict]`
+|Child inline nodes.
+
+|`attributes`
+|`dict`
+|Optional `role` (applied as CSS class).
+|===
+
+Template: `span.html` +
+Output: `<strong>`, `<em>`, `<code>`, `<mark>`, or `<span>` depending on
+`variant`, with optional `class` from `attributes.role`.
+
+**Coverage status:** ✅ Implemented (strong, emphasis, code, mark, default)
+
+---
+
+==== `ref` _(planned)_
+
+[cols="1,1,3",options="header"]
+|===
+|Key |Type |Notes
+
+|`name`
+|`"ref"`
+|Fixed.
+
+|`variant`
+|`"link"`, `"xref"`, `"footnote"`
+|Link type.
+
+|`target`
+|`str`
+|URL or anchor id.
+
+|`inlines`
+|`List[dict]`
+|Link text inline nodes.
+
+|`attributes`
+|`dict`
+|Optional `role`, `window`, etc.
+|===
+
+Template: `ref.html` — **not yet implemented.**
+
+**Coverage status:** 🔲 Planned
+
+---
+
+==== `image_inline` _(planned)_
+
+Template: `image_inline.html` — **not yet implemented.**
+
+**Coverage status:** 🔲 Planned
+
+---
+
+==== `footnote` _(planned)_
+
+Template: `footnote.html` — **not yet implemented.**
+
+**Coverage status:** 🔲 Planned
+
+---
+
+=== 5.3 Fallback Container
+
+Any node whose `name` has no corresponding `<name>.html` template is rendered
+via `fallback_container.html`. It wraps the node's `blocks` or `inlines`
+children in a `<div class="adoc-fallback node-<name>">` element, preserving
+recursive rendering while clearly marking unsupported nodes in the output.
+
+== 6. Directory Layout
+
+....
+asciidoctype/
+├── src/
+│   └── asciidoctype/
+│       ├── __init__.py              # Public API exports
+│       ├── exceptions.py            # AsciiDoctypeRenderingError
+│       ├── renderer.py              # AsciiDoctypeRenderer
+│       └── core_templates/
+│           ├── html5/               # HTML5 pipeline templates
+│           │   ├── document.html
+│           │   ├── section.html
+│           │   ├── paragraph.html
+│           │   ├── listing.html
+│           │   ├── span.html
+│           │   ├── text.html
+│           │   └── fallback_container.html
+│           └── xhtml/               # XHTML 1.0 Strict pipeline templates
+│               ├── document.html
+│               ├── section.html
+│               ├── paragraph.html
+│               ├── listing.html
+│               ├── span.html
+│               ├── text.html
+│               └── fallback_container.html
+├── tests/
+│   ├── conftest.py
+│   ├── test_environment.py
+│   ├── test_renderer.py
+│   ├── test_html5_inline.py
+│   ├── test_html5_blocks.py
+│   ├── test_html5_document.py
+│   ├── test_xhtml_rendering.py
+│   └── test_template_overrides.py
+├── AsciiDoctype_PRD.adoc
+├── AsciiDoctype_Spec.adoc
+├── ARCHITECTURE.adoc
+├── CONTRIBUTING.adoc
+├── AGENTS.adoc
+├── README.adoc
+├── LICENSE.adoc
+└── pyproject.toml
+....
+
+== 7. Design Constraints
+
+* **No file I/O in production code.** AsciiDoctype only reads template files;
+  it never writes anything to disk.
+* **No state mutation.** The `ctx` dict and `node` dicts passed to `render()`
+  are treated as read-only.
+* **O(N) rendering complexity.** Cost scales linearly with the number of nodes
+  in the document tree.
+* **No styling.** AsciiDoctype emits clean semantic markup. CSS, fonts, and
+  design tokens are downstream concerns.
+* **Python 3.9+.** Uses `dict` type hints without `typing.Dict` for conciseness.
+  Must remain compatible with CPython 3.9 through current.
+
+== 8. Downstream Extension Points
+
+Downstream systems (Golem SSG, EPUB compilers, etc.) can extend the rendering
+pipeline without modifying AsciiDoctype:
+
+=== 8.1 Custom Templates via `search_paths`
+
+The most common pattern: provide a theme directory with custom `.html` template
+files. The templates receive the same `node`, `renderer`, and `ctx` variables.
+
+=== 8.2 Custom ASG Nodes
+
+A Golem plugin may inject additional node types into the ASG (e.g. a Mermaid
+diagram node named `"mermaid"`). As long as the theme provides `mermaid.html`,
+AsciiDoctype will render it without modification. No core code change required.
+
+=== 8.3 CSS Classes and IDs
+
+Templates may emit arbitrary CSS classes and `id` attributes to allow
+downstream styling without AsciiDoctype carrying any style responsibility.
+For example, a theme's `section.html` might add `data-` attributes for
+JavaScript-driven interactive features.
+
+=== 8.4 Context Dictionary
+
+The `ctx` dict flows through every recursive call. A Golem orchestrator might
+populate it with site-level settings (`base_url`, `locale`, navigation data)
+that templates can read to produce context-aware output.

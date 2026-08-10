@@ -1,0 +1,253 @@
+= AsciiDoctype
+:toc: left
+:toc-title: Contents
+:toclevels: 3
+:icons: font
+:source-highlighter: highlight.js
+:description: A standalone, pure-Python HTML5 and XHTML rendering library for AsciiDoctrine ASG dictionaries.
+
+image:https://img.shields.io/badge/License-Apache%202.0-blue.svg[Apache 2.0 License, link=LICENSE.adoc]
+image:https://img.shields.io/badge/python-%3E%3D3.9-green[Python 3.9+]
+image:https://img.shields.io/badge/chameleon-%3E%3D4.0-orange[Chameleon 4.0+]
+
+AsciiDoctype is a **headless, pure-Python rendering library** that lowers the
+Resolved Abstract Semantic Graph (ASG) produced by
+https://github.com/asciidoctor/asciidoctrine[AsciiDoctrine] into valid,
+well-formed HTML5 or strict XHTML markup.
+
+It is the designated rendering layer in the **AsciiDoctrine ecosystem** — sitting
+between the semantic parser and any downstream orchestrator (Golem SSG, EPUB
+compilers, custom toolchains).
+
+....
++--------------------+      +------------------+      +---------------------+
+|   AsciiDoctrine    | ───> |   AsciiDoctype   | ───> |   Golem / EPUB /    |
+| (Pure Semantic ASG)|      | (Chameleon ZPT)  |      |   Custom Tool       |
++--------------------+      +------------------+      +---------------------+
+....
+
+== Why AsciiDoctype?
+
+[cols="1,3",options="header"]
+|===
+|Principle |Explanation
+
+|*Headless*
+|Ships zero CSS, zero JavaScript, zero styling opinions. Markup is clean,
+un-styled semantic HTML ready for any design system downstream.
+
+|*Themeable*
+|Custom themes supply their own Chameleon (ZPT) templates. AsciiDoctype
+resolves user templates first and falls back to its bundled core templates
+automatically.
+
+|*Dual-pipeline*
+|Identical ASG dictionaries render cleanly to either HTML5 (browser-native)
+or XHTML 1.0 Strict (EPUB/Kindle-safe) with a single constructor flag.
+
+|*Bytecode speed*
+|Powered by https://chameleon.readthedocs.io/[Chameleon], which pre-compiles
+templates to native Python bytecode. Recursive tree rendering is fast even on
+deeply nested documents.
+
+|*Clean boundaries*
+|AsciiDoctype never touches the filesystem beyond template lookup. No file I/O,
+no CSS injection, no link validation — each concern lives in the correct layer.
+|===
+
+== Quick Start
+
+=== Installation
+
+[source,bash]
+----
+pip install asciidoctype
+----
+
+Or in development mode:
+
+[source,bash]
+----
+git clone https://github.com/webmaven/asciidoctype.git
+cd asciidoctype
+python -m venv .venv && source .venv/bin/activate
+pip install -e .[test]
+----
+
+=== Minimal Usage
+
+[source,python]
+----
+from asciidoctype import AsciiDoctypeRenderer
+
+renderer = AsciiDoctypeRenderer(target_format="html5")
+
+# An ASG node dictionary as produced by AsciiDoctrine's to_dict()
+node = {
+    "name": "paragraph",
+    "type": "block",
+    "attributes": {},
+    "inlines": [
+        {"name": "text", "type": "string", "value": "Hello, "},
+        {
+            "name": "span",
+            "type": "inline",
+            "variant": "strong",
+            "inlines": [{"name": "text", "type": "string", "value": "world"}],
+        },
+        {"name": "text", "type": "string", "value": "!"},
+    ],
+}
+
+html = renderer.render(node)
+# → '<p>Hello, <strong>world</strong>!</p>'
+----
+
+=== Rendering a Complete Document
+
+[source,python]
+----
+from asciidoctype import AsciiDoctypeRenderer
+
+renderer = AsciiDoctypeRenderer(target_format="html5")
+
+document_node = {
+    "name": "document",
+    "type": "block",
+    "header": {"title": "My Document"},
+    "blocks": [
+        {
+            "name": "section",
+            "type": "block",
+            "level": 1,
+            "attributes": {"id": "intro"},
+            "title": [{"name": "text", "type": "string", "value": "Introduction"}],
+            "blocks": [
+                {
+                    "name": "paragraph",
+                    "type": "block",
+                    "attributes": {},
+                    "inlines": [
+                        {"name": "text", "type": "string", "value": "Welcome."}
+                    ],
+                }
+            ],
+        }
+    ],
+}
+
+html = renderer.render(document_node)
+----
+
+=== Using a Custom Theme
+
+Supply an ordered list of `Path` objects. AsciiDoctype resolves templates in
+order, falling back to its bundled templates for any file not found in the
+custom directories.
+
+[source,python]
+----
+from pathlib import Path
+from asciidoctype import AsciiDoctypeRenderer
+
+renderer = AsciiDoctypeRenderer(
+    target_format="html5",
+    search_paths=[
+        Path("./my_site/overrides"),   # highest priority
+        Path("./themes/my_theme"),     # secondary theme
+    ],
+)
+----
+
+If `my_site/overrides/paragraph.html` exists it is used; otherwise
+`themes/my_theme/paragraph.html` is tried; otherwise the bundled
+`core_templates/html5/paragraph.html` is used.
+
+== XHTML (EPUB) Mode
+
+[source,python]
+----
+renderer = AsciiDoctypeRenderer(target_format="xhtml")
+----
+
+XHTML mode produces:
+
+* `<?xml version="1.0" encoding="UTF-8"?>` declaration
+* `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" ...>` DOCTYPE
+* `<html xmlns="http://www.w3.org/1999/xhtml">` namespace binding
+* Explicit `<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />`
+* All void elements closed: `<br />`, `<img />`, `<meta />`
+
+== API Reference
+
+=== `AsciiDoctypeRenderer`
+
+[source,python]
+----
+class AsciiDoctypeRenderer:
+    def __init__(
+        self,
+        target_format: str = "html5",
+        search_paths: Optional[List[Path]] = None,
+    ) -> None: ...
+
+    def render(
+        self,
+        node: Dict[str, Any],
+        context: Optional[Dict[str, Any]] = None,
+    ) -> str: ...
+----
+
+`target_format`::
+  `"html5"` (default) or `"xhtml"`. Raises `ValueError` for any other value.
+
+`search_paths`::
+  Ordered list of `Path` objects for template override directories. The bundled
+  core templates are always appended last as the final fallback.
+
+`render(node, context=None)`::
+  Recursively renders an ASG node dictionary and returns a markup string.
+  Raises `TypeError` if `node` is not a dict with a `"name"` key.
+  Raises `AsciiDoctypeRenderingError` if template execution fails.
+
+=== `AsciiDoctypeRenderingError`
+
+Raised when a Chameleon template fails during rendering. The message includes
+the node name, target pipeline, and the underlying error for quick diagnosis.
+
+[source,python]
+----
+from asciidoctype import AsciiDoctypeRenderingError
+
+try:
+    html = renderer.render(bad_node)
+except AsciiDoctypeRenderingError as e:
+    print(e)
+    # Critical rendering failure processing structural node entity: 'listing'
+    # Target Specification Pipeline: [html5]. Base Error: ...
+----
+
+== Running Tests
+
+[source,bash]
+----
+pip install -e .[test]
+pytest -v
+----
+
+Test coverage:
+
+[source,bash]
+----
+pip install pytest-cov
+pytest --cov=asciidoctype --cov-report=term-missing
+----
+
+== Project Links
+
+* Source: https://github.com/webmaven/asciidoctype
+* Issues: https://github.com/webmaven/asciidoctype/issues
+* License: link:LICENSE.adoc[Apache 2.0]
+* Architecture: link:ARCHITECTURE.adoc[ARCHITECTURE.adoc]
+* Contributing: link:CONTRIBUTING.adoc[CONTRIBUTING.adoc]
+* Agent guidance: link:AGENTS.adoc[AGENTS.adoc]

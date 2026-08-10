@@ -1,0 +1,35 @@
+= Changelog
+:toc: left
+:toc-title: Contents
+:toclevels: 2
+:icons: font
+
+All notable changes to AsciiDoctype are documented in this file.
+
+The format follows https://keepachangelog.com/en/1.0.0/[Keep a Changelog].
+Versioning follows https://semver.org/spec/v2.0.0.html[Semantic Versioning].
+
+== [Unreleased]
+
+Nothing pending.
+
+== [0.1.0] — 2026-08-09
+
+=== Added
+
+* `AsciiDoctypeRenderer` class with `target_format` validation (`html5`, `xhtml`).
+* `AsciiDoctypeRenderingError` typed exception with node-name and pipeline
+  diagnostics in the message.
+* Chameleon `PageTemplateLoader` integration with ordered search path resolution
+  and automatic core template fallback.
+* Core HTML5 templates: `document`, `section`, `paragraph`, `listing`, `span`
+  (strong / emphasis / code / mark / default), `text`, `fallback_container`.
+* Core XHTML 1.0 Strict templates: mirrors of all HTML5 templates with XML
+  declaration, DOCTYPE, namespace binding, and self-closing void elements.
+* Template override mechanism: downstream themes supply a `search_paths` list;
+  custom templates take precedence over bundled core templates.
+* Full pytest test suite: 19 tests, 94% coverage across
+  `test_environment`, `test_renderer`, `test_html5_inline`, `test_html5_blocks`,
+  `test_html5_document`, `test_xhtml_rendering`, `test_template_overrides`.
+* Comprehensive AsciiDoc documentation: `README.adoc`, `LICENSE.adoc`,
+  `ARCHITECTURE.adoc`, `CONTRIBUTING.adoc`, `AGENTS.adoc`, `CHANGELOG.adoc`.

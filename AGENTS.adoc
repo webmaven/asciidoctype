@@ -1,0 +1,283 @@
+= Agent Guidance for AsciiDoctype
+:toc: left
+:toc-title: Contents
+:toclevels: 3
+:icons: font
+
+This document provides orientation for AI coding agents (Antigravity, Claude,
+Gemini, Copilot, etc.) working on the AsciiDoctype codebase. Read it before
+making any code changes.
+
+== Repository Purpose
+
+AsciiDoctype is a **headless, pure-Python rendering library** that converts
+AsciiDoctrine ASG (Abstract Semantic Graph) node dictionaries into HTML5 or
+XHTML markup strings using Chameleon ZPT templates. See
+link:ARCHITECTURE.adoc[ARCHITECTURE.adoc] for full design details.
+
+== Critical Constraints — Do Not Violate
+
+[CAUTION]
+====
+Violating these constraints will cause pull requests to be rejected.
+====
+
+=== 1. No CSS, JavaScript, or Visual Styling
+AsciiDoctype is deliberately headless. Do not add stylesheet links, inline
+styles, `class` attributes for visual purposes, or any JavaScript. The library
+outputs clean semantic markup — styling is downstream.
+
+=== 2. No File I/O in Production Code
+The only file-system access AsciiDoctype performs is reading Chameleon template
+files via `PageTemplateLoader`. Do not add `open()`, `Path.write_text()`, or
+any disk-write operation to the production package.
+
+=== 3. No Mutation of Input Nodes
+The `node` dicts passed to `render()` are treated as read-only. Never modify,
+deep-copy with mutation, or cache them with side effects.
+
+=== 4. Dual Template Rule
+Every supported node type requires **two** template files: one in
+`core_templates/html5/` and one in `core_templates/xhtml/`. A single-pipeline
+implementation is not acceptable.
+
+=== 5. Python-Style Attribute Access in Templates
+Chameleon template variables bound to plain Python dicts must use Python
+expression syntax, not TAL path syntax. Always:
+
+[source,xml]
+----
+<!-- CORRECT -->
+<p tal:attributes="id node.get('attributes', {}).get('id')">
+
+<!-- WRONG — will raise KeyError on missing keys with plain dicts -->
+<p tal:attributes="id node/attributes/id | nothing">
+----
+
+=== 6. `structure` Keyword for Child Rendering
+Child node output inside templates must use the `structure` modifier to prevent
+HTML-escaping:
+
+[source,xml]
+----
+<!-- CORRECT -->
+<tal:block tal:replace="structure renderer.render(child, ctx)" />
+
+<!-- WRONG — will emit escaped text like &lt;strong&gt; -->
+<tal:block tal:replace="renderer.render(child, ctx)" />
+----
+
+=== 7. No Trailing Newlines in Inline Templates
+Chameleon preserves whitespace. Templates for inline nodes (`text.html`,
+`span.html`, `ref.html`, etc.) must **not** end with a newline or contain
+surrounding whitespace that would corrupt the rendered text stream. Write them
+as single-line or whitespace-free files.
+
+=== 8. TDD — Tests Before Implementation
+Always write a failing test before writing implementation code. The test must
+fail for the right reason (missing feature, not a syntax error). Then implement
+the minimum code to make it pass. Commit both together.
+
+== Environment and Commands
+
+=== Running Tests
+
+[source,bash]
+----
+./.venv/bin/pytest -v
+----
+
+[IMPORTANT]
+====
+Never use the system `python` or system `pytest`. Always use
+`./.venv/bin/pytest` — the virtual environment has the required dependencies.
+====
+
+=== Installing Dependencies
+
+[source,bash]
+----
+./.venv/bin/pip install -e .[test]
+----
+
+=== Measuring Coverage
+
+[source,bash]
+----
+./.venv/bin/pip install pytest-cov
+./.venv/bin/pytest --cov=asciidoctype --cov-report=term-missing
+----
+
+=== Git and GitHub
+
+[source,bash]
+----
+# Prefer gh over git clone for repo operations
+gh repo clone webmaven/asciidoctype
+
+# Push commits
+git push origin main
+----
+
+== Template Development Checklist
+
+When adding a new node template:
+
+* [ ] Read the ASG node schema in `ARCHITECTURE.adoc §5`.
+* [ ] Write failing tests in `tests/test_html5_<node>.py`.
+* [ ] Write failing tests in `tests/test_xhtml_<node>.py` (if XHTML-specific
+      behaviour exists).
+* [ ] Implement `core_templates/html5/<node>.html` with no trailing newline.
+* [ ] Implement `core_templates/xhtml/<node>.html` with no trailing newline.
+* [ ] Verify all 19+ existing tests still pass.
+* [ ] Run coverage and confirm no regressions.
+* [ ] Update `ARCHITECTURE.adoc §5` coverage status from 🔲 to ✅.
+* [ ] Commit with a `feat:` prefix commit message.
+
+== Known Chameleon Quirks
+
+[cols="1,3",options="header"]
+|===
+|Issue |Fix
+
+|`tal:choose` does not exist
+|Use `tal:switch` / `tal:case` instead.
+
+|`NameError: value` in `text.html`
+|Use `node['value']` (KeyError propagates) or `node.get('value', '')`. The
+`node/value` path expression fails on plain dicts in recent Chameleon.
+
+|`NameError: container` when using `metal:block define-macro`
+|Do not use METAL macros in inline templates. Inline child iteration directly
+in each `tal:case` branch instead.
+
+|Whitespace in output
+|Multi-line templates introduce newlines between inline elements. Use compact
+single-line templates for inline elements (`span.html`, `text.html`).
+
+|`tal:attributes="tag heading_tag"` does not change element name
+|Chameleon cannot change an element's tag name dynamically. Use separate
+`<h1>`, `<h2>`, … `<h6>` elements with `tal:condition="hlevel == N"` instead.
+|===
+
+== Current Template Coverage Summary
+
+[cols="1,1,1",options="header"]
+|===
+|Node |HTML5 |XHTML
+
+|`document`
+|✅
+|✅
+
+|`section`
+|✅
+|✅
+
+|`paragraph`
+|✅
+|✅
+
+|`listing`
+|✅
+|✅
+
+|`span` (strong, emphasis, code, mark, default)
+|✅
+|✅
+
+|`text`
+|✅
+|✅
+
+|`fallback_container`
+|✅
+|✅
+
+|`list`
+|🔲
+|🔲
+
+|`listItem`
+|🔲
+|🔲
+
+|`admonition`
+|🔲
+|🔲
+
+|`table`
+|🔲
+|🔲
+
+|`sidebar`
+|🔲
+|🔲
+
+|`example`
+|🔲
+|🔲
+
+|`quote`
+|🔲
+|🔲
+
+|`image` (block)
+|🔲
+|🔲
+
+|`ref`
+|🔲
+|🔲
+
+|`image_inline`
+|🔲
+|🔲
+
+|`footnote`
+|🔲
+|🔲
+|===
+
+== File Map
+
+[cols="1,2",options="header"]
+|===
+|File |Role
+
+|`src/asciidoctype/__init__.py`
+|Public API: exports `AsciiDoctypeRenderer`, `AsciiDoctypeRenderingError`.
+
+|`src/asciidoctype/renderer.py`
+|`AsciiDoctypeRenderer` class — init, search path assembly, `render()` dispatch.
+
+|`src/asciidoctype/exceptions.py`
+|`AsciiDoctypeRenderingError` sentinel exception.
+
+|`src/asciidoctype/core_templates/html5/`
+|Bundled HTML5 Chameleon templates (one per node type).
+
+|`src/asciidoctype/core_templates/xhtml/`
+|Bundled XHTML 1.0 Strict Chameleon templates (one per node type).
+
+|`tests/`
+|pytest test suite. 19 tests, 94% coverage.
+
+|`pyproject.toml`
+|Package metadata, dependencies, build config.
+
+|`AsciiDoctype_PRD.adoc`
+|Product Requirements Document.
+
+|`AsciiDoctype_Spec.adoc`
+|Engineering Specification.
+
+|`ARCHITECTURE.adoc`
+|System design, ASG schemas, template coverage reference.
+
+|`CONTRIBUTING.adoc`
+|Human contributor workflow and standards.
+
+|`AGENTS.adoc`
+|This file — AI agent-specific guidance.
+|===
