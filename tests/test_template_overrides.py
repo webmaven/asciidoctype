@@ -12,8 +12,8 @@ def test_custom_template_override(tmp_path: Path):
     # Create custom paragraph.html in custom_theme
     custom_paragraph = custom_theme / "paragraph.html"
     custom_paragraph.write_text(
-        '<p class="custom-override" tal:attributes="id node/attributes/id | nothing">\n'
-        '  <tal:block tal:repeat="inline node/inlines | nothing" tal:replace="structure renderer/render(inline, ctx)" />\n'
+        '<p class="custom-override" tal:attributes="id node.get(\'attributes\', {}).get(\'id\')">\n'
+        '  <tal:block tal:repeat="inline node.get(\'inlines\', [])" tal:replace="structure renderer.render(inline, ctx)" />\n'
         '</p>\n'
     )
 
@@ -26,7 +26,8 @@ def test_custom_template_override(tmp_path: Path):
     }
 
     output = renderer.render(node)
-    assert '<p class="custom-override" id="custom-p">' in output
+    assert 'class="custom-override"' in output
+    assert 'id="custom-p"' in output
     assert "Custom Theme Paragraph" in output
 
 
@@ -52,5 +53,6 @@ def test_custom_template_fallback_to_core(tmp_path: Path):
     }
 
     output = renderer.render(section_node)
-    assert '<section class="adoc-section level-1" id="fallback-section">' in output
+    assert 'class="adoc-section level-1"' in output
+    assert 'id="fallback-section"' in output
     assert "Fallback Section" in output

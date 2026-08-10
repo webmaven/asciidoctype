@@ -1,10 +1,6 @@
-<div class="listingblock" tal:attributes="id node/attributes/id | nothing">
-    <div class="title" tal:condition="node/title | nothing">
-        <tal:block tal:repeat="title_node node/title"
-                   tal:replace="structure renderer/render(title_node, ctx)" />
-    </div>
+<div class="listingblock" tal:attributes="id node.get('attributes', {}).get('id')">
+    <div class="title" tal:condition="node.get('title')"><tal:block tal:repeat="title_node node.get('title', [])" tal:replace="structure renderer.render(title_node, ctx)" /></div>
     <div class="content">
-        <pre tal:attributes="class string:highlight ${node/attributes/language | ''}"><code tal:attributes="class string:language-${node/attributes/language | ''}"
-               tal:content="node/value"></code></pre>
+        <pre tal:attributes="class 'highlight ' + str(node.get('attributes', {}).get('language', ''))"><code tal:attributes="class 'language-' + str(node.get('attributes', {}).get('language', ''))" tal:content="node.get('value', '')"></code></pre>
     </div>
 </div>

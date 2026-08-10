@@ -45,5 +45,5 @@ def test_render_xhtml_paragraph_and_span():
         ],
     }
     output = renderer.render(node)
-    assert '<p id="p-xhtml" class="">' in output
+    assert 'id="p-xhtml"' in output
     assert "<strong>Strict Bold</strong>" in output

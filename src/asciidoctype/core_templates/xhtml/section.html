@@ -1,14 +1,16 @@
-<section class="adoc-section level-${node/level}" 
-         tal:attributes="id node/attributes/id | nothing">
-    <tal:block tal:define="heading_tag string:h${node/level + 1}">
-        <tal:heading tal:omit-tag="not:heading_tag" tal:attributes="tag heading_tag">
-            <tal:block tal:repeat="title_node node/title | nothing" 
-                       tal:replace="structure renderer/render(title_node, ctx)" />
-        </tal:heading>
+<section class="${'adoc-section level-' + str(node.get('level', 0))}" 
+         tal:attributes="id node.get('attributes', {}).get('id')">
+    <tal:block tal:define="hlevel node.get('level', 0) + 1">
+        <h1 tal:condition="hlevel == 1"><tal:block tal:repeat="t node.get('title', [])" tal:replace="structure renderer.render(t, ctx)" /></h1>
+        <h2 tal:condition="hlevel == 2"><tal:block tal:repeat="t node.get('title', [])" tal:replace="structure renderer.render(t, ctx)" /></h2>
+        <h3 tal:condition="hlevel == 3"><tal:block tal:repeat="t node.get('title', [])" tal:replace="structure renderer.render(t, ctx)" /></h3>
+        <h4 tal:condition="hlevel == 4"><tal:block tal:repeat="t node.get('title', [])" tal:replace="structure renderer.render(t, ctx)" /></h4>
+        <h5 tal:condition="hlevel == 5"><tal:block tal:repeat="t node.get('title', [])" tal:replace="structure renderer.render(t, ctx)" /></h5>
+        <h6 tal:condition="hlevel >= 6"><tal:block tal:repeat="t node.get('title', [])" tal:replace="structure renderer.render(t, ctx)" /></h6>
     </tal:block>
     
     <div class="section-blocks">
-        <tal:block tal:repeat="block node/blocks | nothing" 
-                   tal:replace="structure renderer/render(block, ctx)" />
+        <tal:block tal:repeat="block node.get('blocks', [])" 
+                   tal:replace="structure renderer.render(block, ctx)" />
     </div>
 </section>

@@ -22,9 +22,11 @@ def test_render_paragraph_node():
         ],
     }
     output = renderer.render(node)
-    assert '<p id="p1" class="lead">' in output
+    assert 'id="p1"' in output
+    assert 'class="lead"' in output
     assert "This is a <strong>paragraph</strong>." in output
-    assert "</p>" in output
+    assert output.strip().startswith("<p")
+    assert output.strip().endswith("</p>")
 
 
 def test_render_section_node():
@@ -46,7 +48,8 @@ def test_render_section_node():
         ],
     }
     output = renderer.render(node)
-    assert '<section class="adoc-section level-1" id="section-1">' in output
-    assert "<h2 tag=\"h2\">First Section</h2>" in output or "<h2>First Section</h2>" in output or "First Section" in output
+    assert 'class="adoc-section level-1"' in output
+    assert 'id="section-1"' in output
+    assert "<h2>First Section</h2>" in output
     assert "Section content." in output
     assert "</section>" in output

@@ -3,15 +3,15 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title tal:content="node/header/title | 'Document'"></title>
+    <title tal:content="node.get('header', {}).get('title') or 'Document'"></title>
 </head>
 <body>
-    <div id="header" tal:condition="node/header/title | nothing">
-        <h1 tal:content="node/header/title"></h1>
+    <div id="header" tal:condition="node.get('header', {}).get('title')">
+        <h1 tal:content="node.get('header', {}).get('title')"></h1>
     </div>
     <div id="content">
-        <tal:block tal:repeat="block node/blocks | nothing"
-                   tal:replace="structure renderer/render(block, ctx)" />
+        <tal:block tal:repeat="block node.get('blocks', [])"
+                   tal:replace="structure renderer.render(block, ctx)" />
     </div>
 </body>
 </html>
