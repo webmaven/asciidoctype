@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "asciidoctype"
 version = "0.1.0"
 description = "A document processor converting AsciiDoc documents into styled documents using Chameleon ZPT templates."
-readme = "README.md"
+readme = {file = "README.adoc", content-type = "text/x-asciidoc"}
 requires-python = ">=3.9"
 dependencies = [
     "chameleon>=4.0.0",
@@ -16,6 +16,32 @@ dependencies = [
 test = [
     "pytest>=7.0.0",
 ]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+asciidoctype = ["core_templates/*/*.html"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+files = ["src/asciidoctype"]
+
+

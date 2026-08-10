@@ -1,10 +1,13 @@
 import pytest
+
 from asciidoctype import AsciiDoctypeRenderer, AsciiDoctypeRenderingError
-from asciidoctype.exceptions import AsciiDoctypeRenderingError as AsciiDoctypeRenderingErrorFromExceptions
+from asciidoctype.exceptions import (
+    AsciiDoctypeRenderingError as AsciiDoctypeRenderingErrorFromExceptions,
+)
 
 
 def test_asciidoctype_rendering_error_import():
-    """Test AsciiDoctypeRenderingError can be imported from asciidoctype.exceptions and asciidoctype."""
+    """Test AsciiDoctypeRenderingError can be imported from exceptions and top level."""
     assert issubclass(AsciiDoctypeRenderingError, Exception)
     assert AsciiDoctypeRenderingError is AsciiDoctypeRenderingErrorFromExceptions
 

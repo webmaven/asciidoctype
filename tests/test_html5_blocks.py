@@ -1,5 +1,4 @@
 """Tests for HTML5 block elements rendering (paragraph, section)."""
-import pytest
 from asciidoctype import AsciiDoctypeRenderer
 
 

@@ -1,10 +1,9 @@
 """Tests for XHTML Strict rendering pipeline."""
-import pytest
 from asciidoctype import AsciiDoctypeRenderer
 
 
 def test_render_xhtml_document_node():
-    """Test XHTML document node rendering includes XML declaration, XHTML Strict DOCTYPE, namespace and meta tag."""
+    """Test XHTML document node rendering includes XML declaration, DOCTYPE, and namespace."""
     renderer = AsciiDoctypeRenderer(target_format="xhtml")
     node = {
         "name": "document",

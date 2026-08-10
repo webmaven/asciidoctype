@@ -1,6 +1,7 @@
 """AsciiDoctype document rendering engine."""
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
+
 from chameleon import PageTemplateLoader
 
 from .exceptions import AsciiDoctypeRenderingError
@@ -44,9 +45,11 @@ class AsciiDoctypeRenderer:
             except ValueError:
                 template = self.loader["fallback_container.html"]
 
-            return template(node=node, renderer=self, ctx=ctx)
+            res: str = template(node=node, renderer=self, ctx=ctx)
+            return res
         except Exception as err:
+            node_id = node.get("name", "unknown")
             raise AsciiDoctypeRenderingError(
-                f"Critical rendering failure processing structural node entity: '{node.get('name', 'unknown')}' "
-                f"Target Specification Pipeline: [{self.target_format}]. Base Error: {str(err)}"
+                f"Critical rendering failure processing structural node entity: '{node_id}' "
+                f"Target Specification Pipeline: [{self.target_format}]. Base Error: {err!s}"
             ) from err

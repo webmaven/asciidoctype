@@ -1,5 +1,6 @@
 """Tests for HTML5 inline elements rendering (text, span)."""
 import pytest
+
 from asciidoctype import AsciiDoctypeRenderer, AsciiDoctypeRenderingError
 
 
