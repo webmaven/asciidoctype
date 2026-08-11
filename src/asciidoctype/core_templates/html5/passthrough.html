@@ -1,0 +1,19 @@
+<tal:block tal:define="style node.get('attributes', {}).get('style');
+                       val python:node.get('value', '');
+                       latex2mathml python:__import__('latex2mathml.converter').converter">
+    <tal:block tal:condition="python:style in ('latexmath', 'stem')">
+        <div class="stemblock" tal:attributes="id node.get('attributes', {}).get('id')">
+            <div tal:condition="node.get('title')" class="title">
+                <tal:block tal:repeat="inline node.get('title', [])" tal:replace="structure renderer.render(inline, ctx)" />
+            </div>
+            <div class="content">
+                <tal:block tal:condition="node.get('inlines')" tal:repeat="inline node.get('inlines', [])" tal:replace="structure python:latex2mathml.convert(inline.get('value', ''))" />
+                <tal:block tal:condition="not:node.get('inlines')" tal:replace="structure python:latex2mathml.convert(val)" />
+            </div>
+        </div>
+    </tal:block>
+    <tal:block tal:condition="python:style not in ('latexmath', 'stem')">
+        <tal:block tal:condition="node.get('inlines')" tal:repeat="inline node.get('inlines', [])" tal:replace="structure renderer.render(inline, ctx)" />
+        <tal:block tal:condition="not:node.get('inlines')" tal:replace="structure val" />
+    </tal:block>
+</tal:block>

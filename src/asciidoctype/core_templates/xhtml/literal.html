@@ -1,0 +1,11 @@
+<tal:block tal:define="role node.get('attributes', {}).get('role');
+                       literal_class python:('literalblock' + (' ' + role if role else '')).strip()">
+    <div tal:attributes="id node.get('attributes', {}).get('id'); class literal_class">
+        <div tal:condition="node.get('title')" class="title">
+            <tal:block tal:repeat="inline node.get('title', [])" tal:replace="structure renderer.render(inline, ctx)" />
+        </div>
+        <div class="content">
+            <pre class="literalblock"><tal:block tal:condition="node.get('value')" tal:content="node.get('value')" /><tal:block tal:condition="node.get('inlines')" tal:repeat="inline node.get('inlines', [])" tal:replace="structure renderer.render(inline, ctx)" /></pre>
+        </div>
+    </div>
+</tal:block>
