@@ -435,19 +435,21 @@ Output: `<div class="sidebarblock">` containing optional title and body blocks.
 
 ---
 
-==== `example` _(planned)_
+==== `example`
 
-Template: `example.html` — **not yet implemented.**
+Template: `example.html` +
+Output: `<div class="exampleblock">` containing optional title and body blocks.
 
-**Coverage status:** 🔲 Planned
+**Coverage status:** ✅ Implemented
 
 ---
 
-==== `quote` _(planned)_
+==== `quote`
 
-Template: `quote.html` — **not yet implemented.**
+Template: `quote.html` +
+Output: `<div class="quoteblock">` containing `<blockquote>` and optional attribution.
 
-**Coverage status:** 🔲 Planned
+**Coverage status:** ✅ Implemented
 
 ---
 
