@@ -1,0 +1,16 @@
+<tal:block tal:define="role node.get('attributes', {}).get('role');
+                       audio_class python:('audioblock' + (' ' + role if role else '')).strip()">
+    <div tal:attributes="id node.get('attributes', {}).get('id'); class audio_class">
+        <div tal:condition="node.get('title')" class="title">
+            <tal:block tal:repeat="inline node.get('title', [])" tal:replace="structure renderer.render(inline, ctx)" />
+        </div>
+        <div class="content">
+            <audio tal:attributes="src node.get('target', '');
+                                   autoplay node.get('attributes', {}).get('autoplay');
+                                   controls python:'controls' if node.get('attributes', {}).get('controls', True) else None;
+                                   loop node.get('attributes', {}).get('loop')">
+                Your browser does not support the audio element.
+            </audio>
+        </div>
+    </div>
+</tal:block>

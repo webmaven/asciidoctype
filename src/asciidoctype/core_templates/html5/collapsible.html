@@ -1,0 +1,8 @@
+<details class="collapsible" tal:attributes="id node.get('attributes', {}).get('id')">
+    <summary tal:condition="node.get('title')" class="title">
+        <tal:block tal:repeat="inline node.get('title', [])" tal:replace="structure renderer.render(inline, ctx)" />
+    </summary>
+    <div class="content">
+        <tal:block tal:repeat="block node.get('blocks', [])" tal:replace="structure renderer.render(block, ctx)" />
+    </div>
+</details>
