@@ -1,0 +1,18 @@
+<tal:block tal:define="role node.get('attributes', {}).get('role');
+                       table_class python:('tableblock' + (' ' + role if role else '')).strip()">
+    <table tal:attributes="id node.get('attributes', {}).get('id'); class table_class">
+        <caption tal:condition="node.get('title')" class="title">
+            <tal:block tal:repeat="inline node.get('title', [])" tal:replace="structure renderer.render(inline, ctx)" />
+        </caption>
+        <thead tal:condition="node.get('header_rows')">
+            <tr tal:repeat="row node.get('header_rows', [])">
+                <th tal:repeat="cell row"><tal:block tal:repeat="inline cell" tal:replace="structure renderer.render(inline, ctx)" /></th>
+            </tr>
+        </thead>
+        <tbody tal:condition="node.get('rows')">
+            <tr tal:repeat="row node.get('rows', [])">
+                <td tal:repeat="cell row"><tal:block tal:repeat="inline cell" tal:replace="structure renderer.render(inline, ctx)" /></td>
+            </tr>
+        </tbody>
+    </table>
+</tal:block>
