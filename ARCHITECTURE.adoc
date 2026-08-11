@@ -390,9 +390,10 @@ Output: `<li>` containing principal inlines and optional continuation blocks.
 |Optional title inlines.
 |===
 
-Template: `admonition.html` — **not yet implemented.**
+Template: `admonition.html` +
+Output: `<div class="admonitionblock {variant}">` containing optional title and body blocks.
 
-**Coverage status:** 🔲 Planned
+**Coverage status:** ✅ Implemented
 
 ---
 
@@ -425,11 +426,12 @@ Template: `table.html` — **not yet implemented.**
 
 ---
 
-==== `sidebar` _(planned)_
+==== `sidebar`
 
-Template: `sidebar.html` — **not yet implemented.**
+Template: `sidebar.html` +
+Output: `<div class="sidebarblock">` containing optional title and body blocks.
 
-**Coverage status:** 🔲 Planned
+**Coverage status:** ✅ Implemented
 
 ---
 

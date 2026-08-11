@@ -1,0 +1,11 @@
+<tal:block tal:define="role node.get('attributes', {}).get('role');
+                       admon_class python:('admonitionblock ' + node.get('variant', 'note') + (' ' + role if role else '')).strip()">
+    <div tal:attributes="id node.get('attributes', {}).get('id'); class admon_class">
+        <div tal:condition="node.get('title')" class="title">
+            <tal:block tal:repeat="inline node.get('title', [])" tal:replace="structure renderer.render(inline, ctx)" />
+        </div>
+        <div class="content">
+            <tal:block tal:repeat="block node.get('blocks', [])" tal:replace="structure renderer.render(block, ctx)" />
+        </div>
+    </div>
+</tal:block>
