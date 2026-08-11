@@ -1,0 +1,1 @@
+<a tal:attributes="href node.get('target', ''); class python:'xref' if node.get('variant') == 'xref' else node.get('attributes', {}).get('role')"><tal:block tal:repeat="inline node.get('inlines', [])" tal:replace="structure renderer.render(inline, ctx)" /></a>
