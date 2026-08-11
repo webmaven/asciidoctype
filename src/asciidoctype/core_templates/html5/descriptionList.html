@@ -1,0 +1,4 @@
+<dl class="dlist" tal:attributes="id node.get('attributes', {}).get('id'); class node.get('attributes', {}).get('role', 'dlist')">
+    <tal:block tal:repeat="item node.get('items', [])"
+               tal:replace="structure renderer.render(item, ctx)" />
+</dl>

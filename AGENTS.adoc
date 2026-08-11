@@ -195,48 +195,48 @@ single-line templates for inline elements (`span.html`, `text.html`).
 |✅
 
 |`list`
-|🔲
-|🔲
+|✅
+|✅
 
 |`listItem`
-|🔲
-|🔲
+|✅
+|✅
 
 |`admonition`
-|🔲
-|🔲
+|✅
+|✅
 
 |`table`
-|🔲
-|🔲
+|✅
+|✅
 
 |`sidebar`
-|🔲
-|🔲
+|✅
+|✅
 
 |`example`
-|🔲
-|🔲
+|✅
+|✅
 
 |`quote`
-|🔲
-|🔲
+|✅
+|✅
 
 |`image` (block)
-|🔲
-|🔲
+|✅
+|✅
 
 |`ref`
-|🔲
-|🔲
+|✅
+|✅
 
 |`image_inline`
-|🔲
-|🔲
+|✅
+|✅
 
 |`footnote`
-|🔲
-|🔲
+|✅
+|✅
 |===
 
 == File Map
@@ -265,12 +265,6 @@ single-line templates for inline elements (`span.html`, `text.html`).
 
 |`pyproject.toml`
 |Package metadata, dependencies, build config.
-
-|`AsciiDoctype_PRD.adoc`
-|Product Requirements Document.
-
-|`AsciiDoctype_Spec.adoc`
-|Engineering Specification.
 
 |`ARCHITECTURE.adoc`
 |System design, ASG schemas, template coverage reference.

@@ -1,0 +1,4 @@
+<ol class="colist" tal:attributes="id node.get('attributes', {}).get('id'); class node.get('attributes', {}).get('role', 'colist')">
+    <tal:block tal:repeat="item node.get('items', [])"
+               tal:replace="structure renderer.render(item, ctx)" />
+</ol>

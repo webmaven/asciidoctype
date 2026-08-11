@@ -10,6 +10,8 @@ readme = {file = "README.adoc", content-type = "text/x-asciidoc"}
 requires-python = ">=3.9"
 dependencies = [
     "chameleon>=4.0.0",
+    "asciidoctrine>=0.1.0a12",
+    "latex2mathml>=3.77.0",
 ]
 
 [project.optional-dependencies]
@@ -21,6 +23,7 @@ dev = [
     "pytest-cov>=4.0.0",
     "ruff>=0.1.0",
     "mypy>=1.0.0",
+    "pre-commit>=3.0.0",
 ]
 
 [tool.setuptools.packages.find]

@@ -1,0 +1,2 @@
+<tal:block tal:repeat="term node.get('terms', [])" tal:replace="structure renderer.render(term, ctx)" />
+<dd tal:attributes="id node.get('attributes', {}).get('id'); class node.get('attributes', {}).get('role')"><tal:block tal:repeat="inline node.get('principal', [])" tal:replace="structure renderer.render(inline, ctx)" /><tal:block tal:repeat="block node.get('blocks', [])" tal:replace="structure renderer.render(block, ctx)" /></dd>

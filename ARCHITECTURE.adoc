@@ -311,7 +311,7 @@ then `<pre class="highlight {lang}"><code class="language-{lang}">…</code></pr
 
 ---
 
-==== `list` _(planned)_
+==== `list`
 
 [cols="1,1,3",options="header"]
 |===
@@ -367,7 +367,7 @@ Output: `<li>` containing principal inlines and optional continuation blocks.
 
 ---
 
-==== `admonition` _(planned)_
+==== `admonition`
 
 [cols="1,1,3",options="header"]
 |===
