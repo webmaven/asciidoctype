@@ -1,0 +1,1 @@
+<kbd tal:condition="node.get('keys')" tal:repeat="key node.get('keys', [])" tal:content="key" /><kbd tal:condition="not:node.get('keys')" tal:content="node.get('value', '')" />
