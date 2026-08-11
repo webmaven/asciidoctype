@@ -1,0 +1,14 @@
+<tal:block tal:define="role node.get('attributes', {}).get('role');
+                       image_class python:('imageblock' + (' ' + role if role else '')).strip()">
+    <div tal:attributes="id node.get('attributes', {}).get('id'); class image_class">
+        <div class="content">
+            <img tal:attributes="src node.get('target', '');
+                                 alt node.get('attributes', {}).get('alt', '');
+                                 width node.get('attributes', {}).get('width');
+                                 height node.get('attributes', {}).get('height')">
+        </div>
+        <div tal:condition="node.get('title')" class="title">
+            <tal:block tal:repeat="inline node.get('title', [])" tal:replace="structure renderer.render(inline, ctx)" />
+        </div>
+    </div>
+</tal:block>

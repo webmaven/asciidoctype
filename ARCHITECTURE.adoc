@@ -454,12 +454,12 @@ Output: `<div class="quoteblock">` containing `<blockquote>` and optional attrib
 
 ---
 
-==== `image` _(planned)_
+==== `image`
 
-Template: `image.html` — **not yet implemented.** Void element differs between
-HTML5 and XHTML pipelines.
+Template: `image.html` +
+Output: `<div class="imageblock">` wrapping `<img>` (void element slash omitted in HTML5, self-closing in XHTML).
 
-**Coverage status:** 🔲 Planned
+**Coverage status:** ✅ Implemented
 
 ---
 
@@ -564,11 +564,12 @@ Template: `ref.html` — **not yet implemented.**
 
 ---
 
-==== `image_inline` _(planned)_
+==== `image_inline`
 
-Template: `image_inline.html` — **not yet implemented.**
+Template: `image_inline.html` +
+Output: `<span class="image-inline"><img ...></span>` inline image wrapper.
 
-**Coverage status:** 🔲 Planned
+**Coverage status:** ✅ Implemented
 
 ---
 
