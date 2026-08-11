@@ -77,6 +77,13 @@ Manages the compiled-bytecode template cache. Templates are compiled to Python
 bytecode on first use; subsequent calls reuse the cache. This gives near-native
 rendering speed even for large, deeply-nested documents.
 
+=== 2.4 MathML Conversion (`latex2mathml`)
+
+AsciiDoctype relies on `latex2mathml` as a runtime dependency. The `stem` and
+`passthrough` (with `latexmath` style) templates use `latex2mathml` at render
+time to convert LaTeX equations into native MathML markup, eliminating the need
+for client-side JavaScript rendering engines like MathJax or KaTeX.
+
 == 3. Template Resolution Pipeline
 
 Template lookup follows a strict precedence order at every `render()` call:
@@ -463,6 +470,150 @@ Output: `<div class="imageblock">` wrapping `<img>` (void element slash omitted 
 
 ---
 
+==== `open`
+
+Template: `open.html` +
+Output: `<div class="openblock">` containing optional title and content blocks.
+
+**Coverage status:** ✅ Implemented
+
+---
+
+==== `literal`
+
+Template: `literal.html` +
+Output: `<div class="literalblock">` containing `<pre class="literalblock">` with raw pre-formatted text.
+
+**Coverage status:** ✅ Implemented
+
+---
+
+==== `verse`
+
+Template: `verse.html` +
+Output: `<div class="verseblock">` containing `<pre class="content">` and optional attribution.
+
+**Coverage status:** ✅ Implemented
+
+---
+
+==== `stem`
+
+Template: `stem.html` +
+Output: `<div class="stemblock">` containing equation content. For `latexmath` variant, converts to native MathML using `latex2mathml`. For `asciimath` variant, emits raw text as a placeholder.
+
+**Coverage status:** ✅ Implemented
+
+---
+
+==== `passthrough`
+
+Template: `passthrough.html` +
+Output: Emits node value as raw, unescaped markup. When `style` attribute is `latexmath`, converts to MathML like `stem`. Security note: raw HTML emission.
+
+**Coverage status:** ✅ Implemented
+
+---
+
+==== `audio`
+
+Template: `audio.html` +
+Output: `<div class="audioblock">` wrapping `<audio src="..." controls="controls">`.
+
+**Coverage status:** ✅ Implemented
+
+---
+
+==== `video`
+
+Template: `video.html` +
+Output: `<div class="videoblock">` wrapping `<video src="..." controls="controls">`.
+
+**Coverage status:** ✅ Implemented
+
+---
+
+==== `collapsible`
+
+Template: `collapsible.html` +
+Output: `<details class="collapsible">` with `<summary>` and content.
+
+**Coverage status:** ✅ Implemented
+
+---
+
+==== `descriptionList`
+
+Template: `descriptionList.html` +
+Output: `<dl class="dlist">` wrapping description list items.
+
+**Coverage status:** ✅ Implemented
+
+---
+
+==== `descriptionListItem`
+
+Template: `descriptionListItem.html` +
+Output: Renders `<dt>` terms followed by `<dd>` definition content.
+
+**Coverage status:** ✅ Implemented
+
+---
+
+==== `descriptionListTerm`
+
+Template: `descriptionListTerm.html` +
+Output: `<dt>` containing inline term content.
+
+**Coverage status:** ✅ Implemented
+
+---
+
+==== `calloutList`
+
+Template: `calloutList.html` +
+Output: `<ol class="colist">` wrapping callout list items.
+
+**Coverage status:** ✅ Implemented
+
+---
+
+==== `calloutListItem`
+
+Template: `calloutListItem.html` +
+Output: `<li>` containing callout item content.
+
+**Coverage status:** ✅ Implemented
+
+---
+
+==== `floatingTitle`
+
+Template: `floatingTitle.html` +
+Output: Discrete heading (`<h1>`-`<h6>` with `class="discrete"`) not tied to a section.
+
+**Coverage status:** ✅ Implemented
+
+---
+
+==== `thematic_break`
+
+Template: `thematic_break.html` +
+Output: `<hr>` (HTML5) / `<hr />` (XHTML).
+
+**Coverage status:** ✅ Implemented
+
+---
+
+==== `page_break`
+
+Template: `page_break.html` +
+Output: `<div style="break-after: page;"></div>` for paged media.
+
+**Coverage status:** ✅ Implemented
+
+---
+
 === 5.2 Inline-Level Nodes
 
 ==== `text` (leaf node)
@@ -584,6 +735,51 @@ Output: `<sup class="footnote" id="_footnote_id"><a href="#_footnotedef_num">num
 
 ---
 
+==== `kbd`
+
+Template: `kbd.html` +
+Output: `<kbd>` containing key labels.
+
+**Coverage status:** ✅ Implemented
+
+---
+
+==== `button`
+
+Template: `button.html` +
+Output: `<b class="button">` containing button label text.
+
+**Coverage status:** ✅ Implemented
+
+---
+
+==== `menu`
+
+Template: `menu.html` +
+Output: `<span class="menuseq">` containing menu path with `<b class="menu">` and `<b class="menuitem">` elements.
+
+**Coverage status:** ✅ Implemented
+
+---
+
+==== `callout`
+
+Template: `callout.html` +
+Output: `<i class="conum" data-value="N">` inline callout number marker.
+
+**Coverage status:** ✅ Implemented
+
+---
+
+==== `break`
+
+Template: `break.html` +
+Output: `<br>` (HTML5) / `<br />` (XHTML) line break.
+
+**Coverage status:** ✅ Implemented
+
+---
+
 === 5.3 Fallback Container
 
 Any node whose `name` has no corresponding `<name>.html` template is rendered
@@ -595,6 +791,8 @@ recursive rendering while clearly marking unsupported nodes in the output.
 
 ....
 asciidoctype/
+├── bin/
+│   └── check.sh
 ├── src/
 │   └── asciidoctype/
 │       ├── __init__.py              # Public API exports
@@ -602,32 +800,105 @@ asciidoctype/
 │       ├── renderer.py              # AsciiDoctypeRenderer
 │       └── core_templates/
 │           ├── html5/               # HTML5 pipeline templates
+│           │   ├── admonition.html
+│           │   ├── audio.html
+│           │   ├── break.html
+│           │   ├── button.html
+│           │   ├── callout.html
+│           │   ├── calloutList.html
+│           │   ├── calloutListItem.html
+│           │   ├── collapsible.html
+│           │   ├── descriptionList.html
+│           │   ├── descriptionListItem.html
+│           │   ├── descriptionListTerm.html
 │           │   ├── document.html
-│           │   ├── section.html
-│           │   ├── paragraph.html
+│           │   ├── example.html
+│           │   ├── fallback_container.html
+│           │   ├── floatingTitle.html
+│           │   ├── footnote.html
+│           │   ├── image.html
+│           │   ├── image_inline.html
+│           │   ├── kbd.html
+│           │   ├── list.html
+│           │   ├── listItem.html
 │           │   ├── listing.html
+│           │   ├── literal.html
+│           │   ├── menu.html
+│           │   ├── open.html
+│           │   ├── page_break.html
+│           │   ├── paragraph.html
+│           │   ├── passthrough.html
+│           │   ├── quote.html
+│           │   ├── ref.html
+│           │   ├── section.html
+│           │   ├── sidebar.html
 │           │   ├── span.html
+│           │   ├── stem.html
+│           │   ├── table.html
 │           │   ├── text.html
-│           │   └── fallback_container.html
+│           │   ├── thematic_break.html
+│           │   ├── verse.html
+│           │   └── video.html
 │           └── xhtml/               # XHTML 1.0 Strict pipeline templates
+│               ├── admonition.html
+│               ├── audio.html
+│               ├── break.html
+│               ├── button.html
+│               ├── callout.html
+│               ├── calloutList.html
+│               ├── calloutListItem.html
+│               ├── collapsible.html
+│               ├── descriptionList.html
+│               ├── descriptionListItem.html
+│               ├── descriptionListTerm.html
 │               ├── document.html
-│               ├── section.html
-│               ├── paragraph.html
+│               ├── example.html
+│               ├── fallback_container.html
+│               ├── floatingTitle.html
+│               ├── footnote.html
+│               ├── image.html
+│               ├── image_inline.html
+│               ├── kbd.html
+│               ├── list.html
+│               ├── listItem.html
 │               ├── listing.html
+│               ├── literal.html
+│               ├── menu.html
+│               ├── open.html
+│               ├── page_break.html
+│               ├── paragraph.html
+│               ├── passthrough.html
+│               ├── quote.html
+│               ├── ref.html
+│               ├── section.html
+│               ├── sidebar.html
 │               ├── span.html
+│               ├── stem.html
+│               ├── table.html
 │               ├── text.html
-│               └── fallback_container.html
+│               ├── thematic_break.html
+│               ├── verse.html
+│               └── video.html
 ├── tests/
 │   ├── conftest.py
+│   ├── test_admonition_sidebar.py
+│   ├── test_complex_lists.py
 │   ├── test_environment.py
-│   ├── test_renderer.py
-│   ├── test_html5_inline.py
+│   ├── test_example_quote.py
 │   ├── test_html5_blocks.py
 │   ├── test_html5_document.py
-│   ├── test_xhtml_rendering.py
-│   └── test_template_overrides.py
-├── AsciiDoctype_PRD.adoc
-├── AsciiDoctype_Spec.adoc
+│   ├── test_html5_inline.py
+│   ├── test_image_nodes.py
+│   ├── test_inline_macros.py
+│   ├── test_list_nodes.py
+│   ├── test_media_interactive.py
+│   ├── test_ref_footnote.py
+│   ├── test_renderer.py
+│   ├── test_special_blocks.py
+│   ├── test_table_node.py
+│   ├── test_template_overrides.py
+│   └── test_xhtml_rendering.py
+├── .pre-commit-config.yaml
 ├── ARCHITECTURE.adoc
 ├── CONTRIBUTING.adoc
 ├── AGENTS.adoc

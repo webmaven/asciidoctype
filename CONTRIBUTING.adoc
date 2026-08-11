@@ -22,6 +22,8 @@ Harassment or hostile behaviour of any kind will not be tolerated.
 * `git`
 * `gh` (GitHub CLI, preferred for cloning/branching)
 
+Key runtime dependencies include `chameleon`, `asciidoctrine`, and `latex2mathml` (used for converting LaTeX stem blocks into MathML).
+
 === Setup
 
 [source,bash]
@@ -33,8 +35,9 @@ python -m venv .venv
 source .venv/bin/activate          # macOS / Linux
 # .venv\Scripts\activate.bat       # Windows
 
-pip install -e .[test]
-pytest -v                          # should show 19 passed
+pip install -e .[dev]
+pre-commit install
+pytest -v                          # should show 42 passed
 ----
 
 == Contribution Workflow
@@ -86,6 +89,13 @@ AsciiDoctype uses strict Test-Driven Development:
 . Run `pytest -v` to confirm all tests pass.
 . Clean up and commit.
 
+For template integration testing, use a TCK-style approach: tests should parse raw
+AsciiDoc source strings using `asciidoctrine.lark_parser.parse_to_ast` and
+`asciidoctrine.resolver.ASGResolver`, then render the resulting ASG through
+`AsciiDoctypeRenderer` and assert on the HTML/XHTML string output. This ensures
+templates are tested against real, faithful ASG structures rather than hand-crafted
+mock dicts.
+
 [IMPORTANT]
 ====
 Do not submit a pull request without tests. Pull requests that reduce test
@@ -94,15 +104,15 @@ coverage will not be merged.
 
 === 4. Adding a New Node Template
 
-The most common contribution type is adding a template for a node listed as
-🔲 Planned in link:ARCHITECTURE.adoc[ARCHITECTURE.adoc].
+All currently known ASG nodes are implemented, but new nodes may be added as
+AsciiDoctrine evolves.
 
-. Identify the ASG node schema in `ARCHITECTURE.adoc §5`.
+. Identify the ASG node schema in `ARCHITECTURE.adoc §5` (or define it when a new node is introduced).
 . Create `src/asciidoctype/core_templates/html5/<node_name>.html`.
 . Create `src/asciidoctype/core_templates/xhtml/<node_name>.html`.
-. Write tests in `tests/test_html5_<node_name>.py` and optionally
-  `tests/test_xhtml_<node_name>.py`.
-. Update the coverage status in `ARCHITECTURE.adoc` from 🔲 to ✅.
+. Write tests in `tests/test_<node_name>.py` (or `tests/test_html5_<node_name>.py` and
+  `tests/test_xhtml_<node_name>.py`).
+. Update `ARCHITECTURE.adoc §5` to document the new node schema and coverage status.
 
 ==== Template Guidelines
 
@@ -212,14 +222,14 @@ Your pull request description should include:
 
 [source,bash]
 ----
-# All tests
-pytest -v
+# Full pre-commit check (ruff + mypy + pytest)
+./.venv/bin/pre-commit run --all-files
 
 # Test coverage
-pytest --cov=asciidoctype --cov-report=term-missing
+./.venv/bin/pytest --cov=asciidoctype --cov-report=term-missing
 ----
 
-Target: maintain or improve the current 94% coverage.
+Target: maintain or improve coverage.
 
 == What We Are NOT Looking For
 

@@ -11,7 +11,31 @@ Versioning follows https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
 == [Unreleased]
 
-Nothing pending.
+=== Added
+
+* Description list templates (`descriptionList`, `descriptionListItem`, `descriptionListTerm`) — standard `<dl>`, `<dt>`, `<dd>` markup.
+* Callout list templates (`calloutList`, `calloutListItem`) — `<ol class="colist">` with `<li>` items.
+* Audio and video media block templates — `<audio>` and `<video>` elements with controls.
+* Collapsible/details block template — `<details class="collapsible">` with `<summary>`.
+* Open block template — `<div class="openblock">` for generic open blocks.
+* Passthrough block template — raw HTML/XHTML emission (security note: unescaped output).
+* STEM/math block template with native MathML rendering — `latex2mathml` converts LaTeX equations to `<math>` MathML elements at render time. AsciiMath variant emits raw text as placeholder.
+* Verse block template — `<div class="verseblock">` with `<pre>` and optional attribution.
+* Literal block template — `<pre class="literalblock">` for pre-formatted text.
+* Floating title (discrete heading) template — `<h1>`–`<h6>` with `class="discrete"`.
+* Keyboard shortcut inline template (`kbd`) — `<kbd>` elements.
+* Button inline template — `<b class="button">` labels.
+* Menu sequence inline template — `<span class="menuseq">` with menu/menuitem markup.
+* Callout number inline template — `<i class="conum">` marker.
+* Line break inline template — `<br>` / `<br />`.
+* Thematic break template — `<hr>` / `<hr />`.
+* Page break template — `<div style="break-after: page;">` for paged media (EPUB, print CSS).
+* `latex2mathml>=3.77.0` added as a runtime dependency.
+* `pre-commit` integration with `.pre-commit-config.yaml` running `ruff`, `mypy`, and `pytest`.
+* `bin/check.sh` concise verification script.
+* TCK-style integration tests parsing real AsciiDoc source through `asciidoctrine` pipeline.
+* Test suite expanded from 19 to 42 tests across 17 test files.
+* Template count expanded from 17 to 39 node types (78 templates total across HTML5 and XHTML).
 
 == [0.1.0] — 2026-08-09
 

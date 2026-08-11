@@ -80,6 +80,17 @@ the minimum code to make it pass. Commit both together.
 
 == Environment and Commands
 
+Pre-commit is the primary verification tool for this repository.
+
+=== Running Pre-Commit Checks
+
+[source,bash]
+----
+./.venv/bin/pre-commit run --all-files
+----
+
+This runs ruff, mypy, and pytest in sequence.
+
 === Running Tests
 
 [source,bash]
@@ -124,12 +135,14 @@ git push origin main
 When adding a new node template:
 
 * [ ] Read the ASG node schema in `ARCHITECTURE.adoc §5`.
+* [ ] Write failing tests using TCK-style integration testing (parsing AsciiDoc with `asciidoctrine.lark_parser.parse_to_ast` and `asciidoctrine.resolver.ASGResolver`, rendering the result with `AsciiDoctypeRenderer`, asserting on the HTML string output).
 * [ ] Write failing tests in `tests/test_html5_<node>.py`.
 * [ ] Write failing tests in `tests/test_xhtml_<node>.py` (if XHTML-specific
       behaviour exists).
 * [ ] Implement `core_templates/html5/<node>.html` with no trailing newline.
 * [ ] Implement `core_templates/xhtml/<node>.html` with no trailing newline.
-* [ ] Verify all 19+ existing tests still pass.
+* [ ] Verify all 42+ existing tests still pass.
+* [ ] Run pre-commit checks (`./.venv/bin/pre-commit run --all-files`).
 * [ ] Run coverage and confirm no regressions.
 * [ ] Update `ARCHITECTURE.adoc §5` coverage status from 🔲 to ✅.
 * [ ] Commit with a `feat:` prefix commit message.
@@ -158,6 +171,9 @@ single-line templates for inline elements (`span.html`, `text.html`).
 |`tal:attributes="tag heading_tag"` does not change element name
 |Chameleon cannot change an element's tag name dynamically. Use separate
 `<h1>`, `<h2>`, … `<h6>` elements with `tal:condition="hlevel == N"` instead.
+
+|`modules` not available in template namespace
+|In templates, `modules` is not available in the Chameleon namespace. Use `__import__('package.module').module` to import packages dynamically inside templates (used by `stem.html` for `latex2mathml`).
 |===
 
 == Current Template Coverage Summary
@@ -166,31 +182,79 @@ single-line templates for inline elements (`span.html`, `text.html`).
 |===
 |Node |HTML5 |XHTML
 
+|`admonition`
+|✅
+|✅
+
+|`audio`
+|✅
+|✅
+
+|`break`
+|✅
+|✅
+
+|`button`
+|✅
+|✅
+
+|`callout`
+|✅
+|✅
+
+|`calloutList`
+|✅
+|✅
+
+|`calloutListItem`
+|✅
+|✅
+
+|`collapsible`
+|✅
+|✅
+
+|`descriptionList`
+|✅
+|✅
+
+|`descriptionListItem`
+|✅
+|✅
+
+|`descriptionListTerm`
+|✅
+|✅
+
 |`document`
 |✅
 |✅
 
-|`section`
-|✅
-|✅
-
-|`paragraph`
-|✅
-|✅
-
-|`listing`
-|✅
-|✅
-
-|`span` (strong, emphasis, code, mark, default)
-|✅
-|✅
-
-|`text`
+|`example`
 |✅
 |✅
 
 |`fallback_container`
+|✅
+|✅
+
+|`floatingTitle`
+|✅
+|✅
+
+|`footnote`
+|✅
+|✅
+
+|`image`
+|✅
+|✅
+
+|`image_inline`
+|✅
+|✅
+
+|`kbd`
 |✅
 |✅
 
@@ -202,19 +266,31 @@ single-line templates for inline elements (`span.html`, `text.html`).
 |✅
 |✅
 
-|`admonition`
+|`listing`
 |✅
 |✅
 
-|`table`
+|`literal`
 |✅
 |✅
 
-|`sidebar`
+|`menu`
 |✅
 |✅
 
-|`example`
+|`open`
+|✅
+|✅
+
+|`page_break`
+|✅
+|✅
+
+|`paragraph`
+|✅
+|✅
+
+|`passthrough`
 |✅
 |✅
 
@@ -222,19 +298,43 @@ single-line templates for inline elements (`span.html`, `text.html`).
 |✅
 |✅
 
-|`image` (block)
-|✅
-|✅
-
 |`ref`
 |✅
 |✅
 
-|`image_inline`
+|`section`
 |✅
 |✅
 
-|`footnote`
+|`sidebar`
+|✅
+|✅
+
+|`span`
+|✅
+|✅
+
+|`stem`
+|✅
+|✅
+
+|`table`
+|✅
+|✅
+
+|`text`
+|✅
+|✅
+
+|`thematic_break`
+|✅
+|✅
+
+|`verse`
+|✅
+|✅
+
+|`video`
 |✅
 |✅
 |===
@@ -261,10 +361,19 @@ single-line templates for inline elements (`span.html`, `text.html`).
 |Bundled XHTML 1.0 Strict Chameleon templates (one per node type).
 
 |`tests/`
-|pytest test suite. 19 tests, 94% coverage.
+|pytest test suite. 42 tests across 17 test files.
 
 |`pyproject.toml`
 |Package metadata, dependencies, build config.
+
+|`.pre-commit-config.yaml`
+|Pre-commit hook configuration running ruff, mypy, and pytest.
+
+|`bin/check.sh`
+|Helper script for running full pre-commit verification suite.
+
+|`.github/workflows/ci.yml`
+|GitHub Actions CI workflow definition.
 
 |`ARCHITECTURE.adoc`
 |System design, ASG schemas, template coverage reference.
@@ -275,3 +384,4 @@ single-line templates for inline elements (`span.html`, `text.html`).
 |`AGENTS.adoc`
 |This file — AI agent-specific guidance.
 |===
+
