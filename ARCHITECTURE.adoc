@@ -334,15 +334,14 @@ then `<pre class="highlight {lang}"><code class="language-{lang}">…</code></pr
 |`listItem` node dicts.
 |===
 
-Template: `list.html` — **not yet implemented.** Falls back to
-`fallback_container.html`. Contributions welcome; see
-link:CONTRIBUTING.adoc[CONTRIBUTING.adoc].
+Template: `list.html` +
+Output: `<ul>` or `<ol>` depending on `variant`, wrapping `<li>` items.
 
-**Coverage status:** 🔲 Planned
+**Coverage status:** ✅ Implemented
 
 ---
 
-==== `listItem` _(planned)_
+==== `listItem`
 
 [cols="1,1,3",options="header"]
 |===
@@ -361,9 +360,10 @@ link:CONTRIBUTING.adoc[CONTRIBUTING.adoc].
 |Nested continuation blocks.
 |===
 
-Template: `list_item.html` — **not yet implemented.**
+Template: `listItem.html` +
+Output: `<li>` containing principal inlines and optional continuation blocks.
 
-**Coverage status:** 🔲 Planned
+**Coverage status:** ✅ Implemented
 
 ---
 

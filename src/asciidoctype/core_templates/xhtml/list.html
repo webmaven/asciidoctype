@@ -1,0 +1,10 @@
+<tal:block tal:switch="node.get('variant', 'unordered')">
+    <ol tal:case="'ordered'" class="olist" tal:attributes="id node.get('attributes', {}).get('id'); class node.get('attributes', {}).get('role', 'olist')">
+        <tal:block tal:repeat="item node.get('items', [])"
+                   tal:replace="structure renderer.render(item, ctx)" />
+    </ol>
+    <ul tal:case="default" class="ulist" tal:attributes="id node.get('attributes', {}).get('id'); class node.get('attributes', {}).get('role', 'ulist')">
+        <tal:block tal:repeat="item node.get('items', [])"
+                   tal:replace="structure renderer.render(item, ctx)" />
+    </ul>
+</tal:block>
