@@ -8,6 +8,10 @@
 This document describes the internal design, rendering pipeline, template
 resolution strategy, and ASG node coverage of AsciiDoctype.
 
+For development setup, coding standards, and day-to-day workflows, see
+link:AGENTS.adoc[AGENTS.adoc]. For contribution process, see
+link:CONTRIBUTING.adoc[CONTRIBUTING.adoc].
+
 == 1. System Position in the Ecosystem
 
 AsciiDoctype occupies the **formatting layer** between a semantic document
@@ -917,6 +921,24 @@ asciidoctype/
   in the document tree.
 * **No styling.** AsciiDoctype emits clean semantic markup. CSS, fonts, and
   design tokens are downstream concerns.
+* **Dual template rule.** Every supported node type requires **two** template
+  files: one in `core_templates/html5/` and one in `core_templates/xhtml/`.
+  A single-pipeline implementation is not acceptable.
+* **Python-style attribute access in templates.** Chameleon template variables
+  bound to plain Python dicts must use Python expression syntax
+  (`node.get('attributes', {}).get('id')`), not TAL path syntax
+  (`node/attributes/id`) which fails on plain dicts. TAL path syntax _does_
+  work on Chameleon-provided objects that support attribute traversal — for
+  example, `repeat/item/index` is valid because `repeat` is Chameleon's own
+  `RepeatDict`, not a plain `dict`. The rule applies specifically to `node`,
+  `ctx`, and any other plain-dict variable passed into the template namespace.
+* **`structure` keyword for child rendering.** Child node output inside
+  templates must use the `structure` modifier to prevent HTML-escaping of
+  the returned markup string.
+* **No trailing newlines in inline templates.** Chameleon preserves whitespace.
+  Templates for inline nodes (`text.html`, `span.html`, `ref.html`, etc.) must
+  not end with a newline or contain surrounding whitespace that would corrupt
+  the rendered text stream.
 * **Python 3.9+.** Uses `dict` type hints without `typing.Dict` for conciseness.
   Must remain compatible with CPython 3.9 through current.
 

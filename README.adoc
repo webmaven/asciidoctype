@@ -11,6 +11,7 @@ image:https://img.shields.io/badge/python-%3E%3D3.9-green[Python 3.9+]
 image:https://img.shields.io/badge/chameleon-%3E%3D4.0-orange[Chameleon 4.0+]
 image:https://img.shields.io/badge/latex2mathml-%3E%3D3.77-purple[latex2mathml 3.77+]
 image:https://img.shields.io/badge/asciidoctrine-%3E%3D0.1.0a12-blue[AsciiDoctrine 0.1.0a12+]
+image:https://img.shields.io/pypi/v/asciidoctype.svg[PyPI, link=https://pypi.org/project/asciidoctype/]
 
 AsciiDoctype is a **headless, pure-Python rendering library** that lowers the
 Resolved Abstract Semantic Graph (ASG) produced by
@@ -232,31 +233,13 @@ except AsciiDoctypeRenderingError as e:
     # Target Specification Pipeline: [html5]. Base Error: ...
 ----
 
-== Running Tests
-
-[source,bash]
-----
-# Install dev dependencies and pre-commit hooks
-pip install -e .[dev]
-./.venv/bin/pre-commit install
-
-# Run all checks (ruff, mypy, pytest)
-./.venv/bin/pre-commit run --all-files
-----
-
-Test coverage:
-
-[source,bash]
-----
-./.venv/bin/pytest --cov=asciidoctype --cov-report=term-missing
-----
-
 == Project Links
 
+* PyPI: https://pypi.org/project/asciidoctype/
 * Source: https://github.com/webmaven/asciidoctype
 * Issues: https://github.com/webmaven/asciidoctype/issues
 * License: link:LICENSE.adoc[Apache 2.0]
 * Changelog: link:CHANGELOG.adoc[CHANGELOG.adoc]
-* Architecture: link:ARCHITECTURE.adoc[ARCHITECTURE.adoc]
-* Contributing: link:CONTRIBUTING.adoc[CONTRIBUTING.adoc]
-* Agent guidance: link:AGENTS.adoc[AGENTS.adoc]
+* Architecture: link:ARCHITECTURE.adoc[ARCHITECTURE.adoc] — design, internals, ASG schemas
+* Developer Guide: link:AGENTS.adoc[AGENTS.adoc] — development setup, standards, and workflows
+* Contributing: link:CONTRIBUTING.adoc[CONTRIBUTING.adoc] — how to submit changes

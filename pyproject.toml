@@ -4,15 +4,37 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "asciidoctype"
-version = "0.1.0"
-description = "A document processor converting AsciiDoc documents into styled documents using Chameleon ZPT templates."
-readme = {file = "README.adoc", content-type = "text/x-asciidoc"}
+version = "0.1.0a1"
+description = "A headless, pure-Python HTML5 and XHTML rendering library for AsciiDoctrine ASG dictionaries."
+readme = {file = "README.adoc"}
+license = {text = "Apache-2.0"}
 requires-python = ">=3.9"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Text Processing :: Markup",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
 dependencies = [
     "chameleon>=4.0.0",
     "asciidoctrine>=0.1.0a12",
     "latex2mathml>=3.77.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/webmaven/asciidoctype"
+Source = "https://github.com/webmaven/asciidoctype"
+Issues = "https://github.com/webmaven/asciidoctype/issues"
+Changelog = "https://github.com/webmaven/asciidoctype/blob/main/CHANGELOG.adoc"
+Documentation = "https://github.com/webmaven/asciidoctype/blob/main/README.adoc"
 
 [project.optional-dependencies]
 test = [

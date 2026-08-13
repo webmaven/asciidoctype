@@ -1,7 +1,65 @@
+# Environments
 .venv/
+env/
+venv/
+ENV/
+
+# Python byte-code / dynamic patterns
 __pycache__/
-*.egg-info/
-.pytest_cache/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging / build artifacts
 build/
 dist/
-*.pyc
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Testing & Coverage
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+*.pyo
+.hypothesis/
+.pytest_cache/
+.tox/
+.nox/
+nosetests.xml
+htmlcov/
+
+# Type checking
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+dmypy.json
+
+# Operating System & IDEs
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Tooling / Local Agent Scratch
+.superpowers/
+docs/
+scratch/

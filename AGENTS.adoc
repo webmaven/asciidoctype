@@ -1,86 +1,51 @@
-= Agent Guidance for AsciiDoctype
+= Developing AsciiDoctype
 :toc: left
 :toc-title: Contents
 :toclevels: 3
 :icons: font
+:source-highlighter: highlight.js
 
-This document provides orientation for AI coding agents (Antigravity, Claude,
-Gemini, Copilot, etc.) working on the AsciiDoctype codebase. Read it before
-making any code changes.
+This document is the single source of truth for developing AsciiDoctype —
+environment setup, tooling, coding standards, and workflows. For what
+AsciiDoctype is and how to use it, see link:README.adoc[README.adoc]. For
+architecture and design rationale, see link:ARCHITECTURE.adoc[ARCHITECTURE.adoc].
+For contribution process (issues, PRs, code of conduct), see
+link:CONTRIBUTING.adoc[CONTRIBUTING.adoc].
 
-== Repository Purpose
+== Development Environment
 
-AsciiDoctype is a **headless, pure-Python rendering library** that converts
-AsciiDoctrine ASG (Abstract Semantic Graph) node dictionaries into HTML5 or
-XHTML markup strings using Chameleon ZPT templates. See
-link:ARCHITECTURE.adoc[ARCHITECTURE.adoc] for full design details.
+=== Prerequisites
 
-== Critical Constraints — Do Not Violate
+* Python 3.9 or later
+* `git`
+* `gh` (GitHub CLI, preferred for cloning/branching)
 
-[CAUTION]
+Key runtime dependencies: `chameleon`, `asciidoctrine`, and `latex2mathml`
+(used for converting LaTeX stem blocks into MathML).
+
+=== Setup
+
+[source,bash]
+----
+gh repo clone webmaven/asciidoctype
+cd asciidoctype
+
+python -m venv .venv
+source .venv/bin/activate          # macOS / Linux
+# .venv\Scripts\activate.bat       # Windows
+
+pip install -e .[dev]
+pre-commit install
+pytest -v                          # should show 42+ passed
+----
+
+[IMPORTANT]
 ====
-Violating these constraints will cause pull requests to be rejected.
+Never use the system `python` or system `pytest`. Always use
+`./.venv/bin/pytest` — the virtual environment has the required dependencies.
 ====
 
-=== 1. No CSS, JavaScript, or Visual Styling
-AsciiDoctype is deliberately headless. Do not add stylesheet links, inline
-styles, `class` attributes for visual purposes, or any JavaScript. The library
-outputs clean semantic markup — styling is downstream.
-
-=== 2. No File I/O in Production Code
-The only file-system access AsciiDoctype performs is reading Chameleon template
-files via `PageTemplateLoader`. Do not add `open()`, `Path.write_text()`, or
-any disk-write operation to the production package.
-
-=== 3. No Mutation of Input Nodes
-The `node` dicts passed to `render()` are treated as read-only. Never modify,
-deep-copy with mutation, or cache them with side effects.
-
-=== 4. Dual Template Rule
-Every supported node type requires **two** template files: one in
-`core_templates/html5/` and one in `core_templates/xhtml/`. A single-pipeline
-implementation is not acceptable.
-
-=== 5. Python-Style Attribute Access in Templates
-Chameleon template variables bound to plain Python dicts must use Python
-expression syntax, not TAL path syntax. Always:
-
-[source,xml]
-----
-<!-- CORRECT -->
-<p tal:attributes="id node.get('attributes', {}).get('id')">
-
-<!-- WRONG — will raise KeyError on missing keys with plain dicts -->
-<p tal:attributes="id node/attributes/id | nothing">
-----
-
-=== 6. `structure` Keyword for Child Rendering
-Child node output inside templates must use the `structure` modifier to prevent
-HTML-escaping:
-
-[source,xml]
-----
-<!-- CORRECT -->
-<tal:block tal:replace="structure renderer.render(child, ctx)" />
-
-<!-- WRONG — will emit escaped text like &lt;strong&gt; -->
-<tal:block tal:replace="renderer.render(child, ctx)" />
-----
-
-=== 7. No Trailing Newlines in Inline Templates
-Chameleon preserves whitespace. Templates for inline nodes (`text.html`,
-`span.html`, `ref.html`, etc.) must **not** end with a newline or contain
-surrounding whitespace that would corrupt the rendered text stream. Write them
-as single-line or whitespace-free files.
-
-=== 8. TDD — Tests Before Implementation
-Always write a failing test before writing implementation code. The test must
-fail for the right reason (missing feature, not a syntax error). Then implement
-the minimum code to make it pass. Commit both together.
-
-== Environment and Commands
-
-Pre-commit is the primary verification tool for this repository.
+== Development Workflow Commands
 
 === Running Pre-Commit Checks
 
@@ -96,19 +61,6 @@ This runs ruff, mypy, and pytest in sequence.
 [source,bash]
 ----
 ./.venv/bin/pytest -v
-----
-
-[IMPORTANT]
-====
-Never use the system `python` or system `pytest`. Always use
-`./.venv/bin/pytest` — the virtual environment has the required dependencies.
-====
-
-=== Installing Dependencies
-
-[source,bash]
-----
-./.venv/bin/pip install -e .[test]
 ----
 
 === Measuring Coverage
@@ -130,7 +82,33 @@ gh repo clone webmaven/asciidoctype
 git push origin main
 ----
 
-== Template Development Checklist
+== Test-Driven Development
+
+AsciiDoctype uses strict Red/Green TDD:
+
+. Write a failing test that specifies the expected behaviour.
+. Run `./.venv/bin/pytest -v` to confirm it fails for the right reason (missing
+  feature, not a syntax error).
+. Write the minimum implementation to make the test pass.
+. Run `./.venv/bin/pytest -v` to confirm all tests pass.
+. Clean up and commit.
+
+For template integration testing, use a TCK-style approach: tests should parse
+raw AsciiDoc source strings using `asciidoctrine.lark_parser.parse_to_ast` and
+`asciidoctrine.resolver.ASGResolver`, then render the resulting ASG through
+`AsciiDoctypeRenderer` and assert on the HTML/XHTML string output. This ensures
+templates are tested against real, faithful ASG structures rather than
+hand-crafted mock dicts.
+
+[IMPORTANT]
+====
+Do not submit a pull request without tests. Pull requests that reduce test
+coverage will not be merged.
+====
+
+== Template Development
+
+=== Checklist
 
 When adding a new node template:
 
@@ -146,6 +124,41 @@ When adding a new node template:
 * [ ] Run coverage and confirm no regressions.
 * [ ] Update `ARCHITECTURE.adoc §5` coverage status from 🔲 to ✅.
 * [ ] Commit with a `feat:` prefix commit message.
+
+=== Template Guidelines
+
+* Use Python-style attribute access in expressions:
+  `node.get('attributes', {}).get('id')` rather than TAL path expressions
+  (`node/attributes/id`) which do not work with plain `dict` objects.
+  TAL path syntax _is_ valid on Chameleon-provided objects (e.g.
+  `repeat/item/index` on the built-in `RepeatDict`), but `node`, `ctx`, and
+  all other plain-dict variables in the template namespace require Python
+  expression syntax.
+* Always use `structure renderer.render(child, ctx)` when emitting child
+  node output. Without `structure`, HTML brackets are escaped.
+* Avoid newlines inside inline element templates (span, text, ref). Chameleon
+  preserves whitespace, and stray newlines produce unwanted gaps in output.
+* Both `html5/` and `xhtml/` templates are required for every node.
+  The XHTML variant must use self-closing void elements (`<br />`).
+
+=== Example: Minimal Template Pair
+
+`src/asciidoctype/core_templates/html5/quote.html`:
+
+[source,xml]
+----
+<blockquote tal:attributes="id node.get('attributes', {}).get('id');
+                             class node.get('attributes', {}).get('role')">
+    <tal:block tal:repeat="block node.get('blocks', [])"
+               tal:replace="structure renderer.render(block, ctx)" />
+</blockquote>
+----
+
+`src/asciidoctype/core_templates/xhtml/quote.html`:
+
+Same content — the XHTML `document.html` wrapper provides the namespace and
+DOCTYPE; inner block templates need no XHTML-specific changes unless they
+contain void elements.
 
 == Known Chameleon Quirks
 
@@ -176,7 +189,98 @@ single-line templates for inline elements (`span.html`, `text.html`).
 |In templates, `modules` is not available in the Chameleon namespace. Use `__import__('package.module').module` to import packages dynamically inside templates (used by `stem.html` for `latex2mathml`).
 |===
 
-== Current Template Coverage Summary
+== Project Standards
+
+=== Code Style
+
+* Follow https://peps.python.org/pep-0008/[PEP 8].
+* Type-annotate all public functions and methods.
+* Keep functions small and single-purpose.
+* No global mutable state.
+
+=== Template Style
+
+* One template per node type, one file per pipeline.
+* No CSS or JavaScript in templates — AsciiDoctype is a headless renderer.
+* All attribute access defensive: `node.get('key', default)` never bare `node['key']`
+  (unless a missing key should propagate as an error, like `node['value']` in
+  `text.html`).
+
+=== Documentation
+
+* Update `ARCHITECTURE.adoc §5` when adding or changing node support.
+* Update `README.adoc` Quick Start examples if the public API changes.
+* All docs are AsciiDoc (`.adoc`). No Markdown files should be added.
+
+=== Commit Messages
+
+Follow the https://www.conventionalcommits.org/[Conventional Commits] spec:
+
+[cols="1,2",options="header"]
+|===
+|Prefix |Use for
+
+|`feat:`
+|New feature, new template
+
+|`fix:`
+|Bug correction
+
+|`docs:`
+|Documentation update
+
+|`test:`
+|Tests only, no production code
+
+|`chore:`
+|Tooling, build, CI
+
+|`refactor:`
+|Restructuring without behaviour change
+|===
+
+Examples:
+
+----
+feat: implement list and listItem templates for HTML5 and XHTML
+fix: handle missing attributes dict in section template
+docs: document ref node schema in ARCHITECTURE.adoc
+test: add coverage for xhtml listing block rendering
+----
+
+== Design Constraints (Quick Reference)
+
+For full design rationale, see link:ARCHITECTURE.adoc[ARCHITECTURE.adoc §7 Design Constraints].
+
+[cols="1,2",options="header"]
+|===
+|Constraint |Summary
+
+|No CSS, JavaScript, or styling
+|Headless renderer; markup only, styling is downstream.
+
+|No file I/O in production code
+|Only reads template files via `PageTemplateLoader`.
+
+|No mutation of input nodes
+|`node` and `ctx` dicts are read-only.
+
+|Dual template rule
+|Every node needs both `html5/` and `xhtml/` templates.
+
+|Python-style attribute access
+|Use `node.get()`, not TAL path expressions, on plain dicts. TAL paths work
+on Chameleon-provided objects (e.g. `repeat/item/index`) but not on `node`
+or `ctx`.
+
+|`structure` keyword required
+|Child rendering must use `structure` to prevent escaping.
+
+|No trailing newlines in inline templates
+|Chameleon preserves whitespace; inline templates must be compact.
+|===
+
+== Template Coverage Summary
 
 [cols="1,1,1",options="header"]
 |===
@@ -339,49 +443,4 @@ single-line templates for inline elements (`span.html`, `text.html`).
 |✅
 |===
 
-== File Map
-
-[cols="1,2",options="header"]
-|===
-|File |Role
-
-|`src/asciidoctype/__init__.py`
-|Public API: exports `AsciiDoctypeRenderer`, `AsciiDoctypeRenderingError`.
-
-|`src/asciidoctype/renderer.py`
-|`AsciiDoctypeRenderer` class — init, search path assembly, `render()` dispatch.
-
-|`src/asciidoctype/exceptions.py`
-|`AsciiDoctypeRenderingError` sentinel exception.
-
-|`src/asciidoctype/core_templates/html5/`
-|Bundled HTML5 Chameleon templates (one per node type).
-
-|`src/asciidoctype/core_templates/xhtml/`
-|Bundled XHTML 1.0 Strict Chameleon templates (one per node type).
-
-|`tests/`
-|pytest test suite. 42 tests across 17 test files.
-
-|`pyproject.toml`
-|Package metadata, dependencies, build config.
-
-|`.pre-commit-config.yaml`
-|Pre-commit hook configuration running ruff, mypy, and pytest.
-
-|`bin/check.sh`
-|Helper script for running full pre-commit verification suite.
-
-|`.github/workflows/ci.yml`
-|GitHub Actions CI workflow definition.
-
-|`ARCHITECTURE.adoc`
-|System design, ASG schemas, template coverage reference.
-
-|`CONTRIBUTING.adoc`
-|Human contributor workflow and standards.
-
-|`AGENTS.adoc`
-|This file — AI agent-specific guidance.
-|===
-
+For the full directory layout and file map, see link:ARCHITECTURE.adoc[ARCHITECTURE.adoc §6 Directory Layout].

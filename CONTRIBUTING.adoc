@@ -5,50 +5,24 @@
 :icons: font
 :source-highlighter: highlight.js
 
-Thank you for considering a contribution to AsciiDoctype! This document describes
-the project's expectations, workflow, and standards so your contribution can be
-reviewed and merged smoothly.
+Thank you for considering a contribution to AsciiDoctype! This document
+describes the process for getting a contribution reviewed and merged. For
+development environment setup, coding standards, and day-to-day workflows, see
+link:AGENTS.adoc[AGENTS.adoc]. For architecture and design decisions, see
+link:ARCHITECTURE.adoc[ARCHITECTURE.adoc].
 
 == Code of Conduct
 
 All contributors are expected to interact respectfully and constructively.
 Harassment or hostile behaviour of any kind will not be tolerated.
 
-== Development Environment
-
-=== Prerequisites
-
-* Python 3.9 or later
-* `git`
-* `gh` (GitHub CLI, preferred for cloning/branching)
-
-Key runtime dependencies include `chameleon`, `asciidoctrine`, and `latex2mathml` (used for converting LaTeX stem blocks into MathML).
-
-=== Setup
-
-[source,bash]
-----
-gh repo clone webmaven/asciidoctype
-cd asciidoctype
-
-python -m venv .venv
-source .venv/bin/activate          # macOS / Linux
-# .venv\Scripts\activate.bat       # Windows
-
-pip install -e .[dev]
-pre-commit install
-pytest -v                          # should show 42 passed
-----
-
-== Contribution Workflow
-
-=== 1. Open an Issue First
+== Before You Start
 
 For anything beyond a trivial typo fix, open a GitHub issue to discuss the
 change before writing code. This prevents duplicated effort and ensures the
 direction fits the project's goals.
 
-=== 2. Fork and Branch
+== Fork, Branch, and Develop
 
 [source,bash]
 ----
@@ -79,109 +53,11 @@ Branch naming convention:
 |Internal restructuring with no external behaviour change
 |===
 
-=== 3. Red/Green TDD
+Set up your development environment and follow the TDD workflow described in
+link:AGENTS.adoc[AGENTS.adoc]. All coding standards, template guidelines,
+and commit message conventions are documented there.
 
-AsciiDoctype uses strict Test-Driven Development:
-
-. Write a failing test that specifies the expected behaviour.
-. Run `pytest -v` to confirm it fails.
-. Write the minimum implementation to make the test pass.
-. Run `pytest -v` to confirm all tests pass.
-. Clean up and commit.
-
-For template integration testing, use a TCK-style approach: tests should parse raw
-AsciiDoc source strings using `asciidoctrine.lark_parser.parse_to_ast` and
-`asciidoctrine.resolver.ASGResolver`, then render the resulting ASG through
-`AsciiDoctypeRenderer` and assert on the HTML/XHTML string output. This ensures
-templates are tested against real, faithful ASG structures rather than hand-crafted
-mock dicts.
-
-[IMPORTANT]
-====
-Do not submit a pull request without tests. Pull requests that reduce test
-coverage will not be merged.
-====
-
-=== 4. Adding a New Node Template
-
-All currently known ASG nodes are implemented, but new nodes may be added as
-AsciiDoctrine evolves.
-
-. Identify the ASG node schema in `ARCHITECTURE.adoc §5` (or define it when a new node is introduced).
-. Create `src/asciidoctype/core_templates/html5/<node_name>.html`.
-. Create `src/asciidoctype/core_templates/xhtml/<node_name>.html`.
-. Write tests in `tests/test_<node_name>.py` (or `tests/test_html5_<node_name>.py` and
-  `tests/test_xhtml_<node_name>.py`).
-. Update `ARCHITECTURE.adoc §5` to document the new node schema and coverage status.
-
-==== Template Guidelines
-
-* Use Python-style attribute access in expressions:
-  `node.get('attributes', {}).get('id')` rather than TAL path expressions
-  (`node/attributes/id`) which do not work with plain `dict` objects.
-* Always use `structure renderer.render(child, ctx)` when emitting child
-  node output. Without `structure`, HTML brackets are escaped.
-* Avoid newlines inside inline element templates (span, text, ref). Chameleon
-  preserves whitespace, and stray newlines produce unwanted gaps in output.
-* Both `html5/` and `xhtml/` templates are required for every node.
-  The XHTML variant must use self-closing void elements (`<br />`).
-
-==== Example: Minimal Template Pair
-
-`src/asciidoctype/core_templates/html5/quote.html`:
-
-[source,xml]
-----
-<blockquote tal:attributes="id node.get('attributes', {}).get('id');
-                             class node.get('attributes', {}).get('role')">
-    <tal:block tal:repeat="block node.get('blocks', [])"
-               tal:replace="structure renderer.render(block, ctx)" />
-</blockquote>
-----
-
-`src/asciidoctype/core_templates/xhtml/quote.html`:
-
-Same content — the XHTML `document.html` wrapper provides the namespace and
-DOCTYPE; inner block templates need no XHTML-specific changes unless they
-contain void elements.
-
-=== 5. Commit Messages
-
-Follow the https://www.conventionalcommits.org/[Conventional Commits] spec:
-
-[cols="1,2",options="header"]
-|===
-|Prefix |Use for
-
-|`feat:`
-|New feature, new template
-
-|`fix:`
-|Bug correction
-
-|`docs:`
-|Documentation update
-
-|`test:`
-|Tests only, no production code
-
-|`chore:`
-|Tooling, build, CI
-
-|`refactor:`
-|Restructuring without behaviour change
-|===
-
-Examples:
-
-----
-feat: implement list and listItem templates for HTML5 and XHTML
-fix: handle missing attributes dict in section template
-docs: document ref node schema in ARCHITECTURE.adoc
-test: add coverage for xhtml listing block rendering
-----
-
-=== 6. Pull Request
+== Submit a Pull Request
 
 [source,bash]
 ----
@@ -195,41 +71,8 @@ Your pull request description should include:
 * Which issue it resolves (if any): `Closes #N`.
 * Test results (paste the `pytest -v` output).
 
-== Standards
-
-=== Code Style
-
-* Follow https://peps.python.org/pep-0008/[PEP 8].
-* Type-annotate all public functions and methods.
-* Keep functions small and single-purpose.
-* No global mutable state.
-
-=== Template Style
-
-* One template per node type, one file per pipeline.
-* No CSS or JavaScript in templates — AsciiDoctype is a headless renderer.
-* All attribute access defensive: `node.get('key', default)` never bare `node['key']`
-  (unless a missing key should propagate as an error, like `node['value']` in
-  `text.html`).
-
-=== Documentation
-
-* Update `ARCHITECTURE.adoc §5` when adding or changing node support.
-* Update `README.adoc` Quick Start examples if the public API changes.
-* All docs are AsciiDoc (`.adoc`). No Markdown files should be added.
-
-== Running the Full Quality Check
-
-[source,bash]
-----
-# Full pre-commit check (ruff + mypy + pytest)
-./.venv/bin/pre-commit run --all-files
-
-# Test coverage
-./.venv/bin/pytest --cov=asciidoctype --cov-report=term-missing
-----
-
-Target: maintain or improve coverage.
+Before submitting, run the full pre-commit check suite as described in
+link:AGENTS.adoc[AGENTS.adoc §Development Workflow Commands].
 
 == What We Are NOT Looking For
 
