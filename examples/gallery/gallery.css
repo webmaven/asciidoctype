@@ -1,0 +1,754 @@
+/* ==========================================================================
+   1. CSS Design Tokens & Reset (Zero JS, Pure Vanilla CSS3)
+   ========================================================================== */
+:root {
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Menlo", "Consolas", "Liberation Mono", monospace;
+    --font-serif: "Iowan Old Style", "Apple Garamond", "Baskerville", "Times New Roman", serif;
+
+    --bg-canvas: #090d16;
+    --bg-surface: #131b2e;
+    --bg-surface-elevated: #1a253e;
+    --bg-code: #0b101c;
+    --bg-preview: #ffffff;
+    --text-preview: #1e293b;
+
+    --border-subtle: #243252;
+    --border-active: #3b82f6;
+
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+
+    --accent-primary: #38bdf8;
+    --accent-secondary: #818cf8;
+    --accent-success: #34d399;
+    --accent-warning: #fbbf24;
+    --accent-danger: #f87171;
+
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    --sidebar-width: 280px;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    line-height: 1.6;
+}
+
+body {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ==========================================================================
+   2. Sticky Sidebar Navigation (Pure CSS)
+   ========================================================================== */
+.sidebar {
+    width: var(--sidebar-width);
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    background: var(--bg-surface);
+    border-right: 1px solid var(--border-subtle);
+    padding: 1.5rem 1rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    flex-shrink: 0;
+}
+
+.brand-block {
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.brand-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--accent-primary);
+    letter-spacing: -0.02em;
+}
+
+.brand-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.4rem;
+}
+
+.nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.nav-category-title {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent-secondary);
+    font-weight: 700;
+    margin-top: 1rem;
+    margin-bottom: 0.25rem;
+    padding-left: 0.5rem;
+}
+
+.nav-item {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    padding: 0.4rem 0.6rem;
+    border-radius: var(--radius-sm);
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nav-item:hover {
+    background: var(--bg-surface-elevated);
+    color: var(--accent-primary);
+    transform: translateX(3px);
+}
+
+/* ==========================================================================
+   3. Main Showcase Stage
+   ========================================================================== */
+.main-stage {
+    flex: 1;
+    padding: 2.5rem 3.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.stage-hero {
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.hero-title {
+    font-size: 2.75rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    background: linear-gradient(
+        125deg,
+        #f8fafc 0%,
+        #38bdf8 25%,
+        #818cf8 50%,
+        #ec4899 75%,
+        #38bdf8 100%
+    );
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradientFlow 8s ease-in-out infinite;
+}
+
+@keyframes gradientFlow {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+
+.hero-lead {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    margin-top: 0.75rem;
+    max-width: 800px;
+}
+
+.hero-badges {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.pill-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.3rem 0.75rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 9999px;
+    color: var(--text-secondary);
+}
+
+/* ==========================================================================
+   4. Card Architecture & Pure CSS Tabs
+   ========================================================================== */
+.showcase-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+}
+
+.showcase-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    transition: border-color 0.2s ease;
+}
+
+.showcase-card:target {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.4), var(--shadow-card);
+}
+
+.card-header {
+    padding: 1.5rem 1.75rem;
+    border-bottom: 1px solid var(--border-subtle);
+    background: rgba(19, 27, 46, 0.5);
+}
+
+.card-meta {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.category-badge {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    padding: 0.2rem 0.5rem;
+    background: rgba(129, 140, 248, 0.15);
+    color: var(--accent-secondary);
+    border-radius: var(--radius-sm);
+}
+
+.node-badge {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.card-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+}
+
+.card-desc {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-top: 0.35rem;
+}
+
+/* Pure CSS Tab Controller (Zero JS) */
+.tab-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.tab-radio {
+    display: none;
+}
+
+.tab-nav {
+    display: flex;
+    background: var(--bg-surface-elevated);
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 0.25rem 0.5rem 0 0.5rem;
+    gap: 0.5rem;
+    overflow-x: auto;
+}
+
+.tab-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    padding: 0.6rem 1rem;
+    border-top-left-radius: var(--radius-sm);
+    border-top-right-radius: var(--radius-sm);
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.tab-label:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Radio Checked Sibling Switchers */
+.tab-radio-1:checked ~ .tab-nav .label-1,
+.tab-radio-2:checked ~ .tab-nav .label-2,
+.tab-radio-3:checked ~ .tab-nav .label-3,
+.tab-radio-4:checked ~ .tab-nav .label-4 {
+    color: var(--accent-primary);
+    background: var(--bg-surface);
+    border-top: 2px solid var(--accent-primary);
+    font-weight: 700;
+}
+
+.tab-panels {
+    background: var(--bg-canvas);
+}
+
+.tab-panel {
+    display: none;
+    animation: fadeIn 0.15s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.tab-radio-1:checked ~ .tab-panels .panel-preview,
+.tab-radio-2:checked ~ .tab-panels .panel-adoc,
+.tab-radio-3:checked ~ .tab-panels .panel-asg,
+.tab-radio-4:checked ~ .tab-panels .panel-html {
+    display: block;
+}
+
+/* ==========================================================================
+   5. Rendered Preview Canvas & Code Viewers
+   ========================================================================== */
+.preview-surface {
+    background: var(--bg-preview);
+    color: var(--text-preview);
+    padding: 2.5rem;
+    font-family: var(--font-sans);
+    line-height: 1.6;
+}
+
+.preview-surface h1, .preview-surface h2, .preview-surface h3, .preview-surface h4 {
+    color: #0f172a;
+    font-weight: 700;
+    margin-top: 1.25rem;
+    margin-bottom: 0.75rem;
+}
+.preview-surface h1 { font-size: 1.75rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; }
+.preview-surface h2 { font-size: 1.4rem; }
+.preview-surface h3 { font-size: 1.15rem; }
+.preview-surface p { margin-bottom: 1rem; color: #334155; }
+
+/* Distinctive Lead Paragraph */
+.preview-surface p.lead {
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: #0f172a;
+    line-height: 1.7;
+    border-left: 4px solid var(--accent-primary);
+    padding: 0.75rem 1.25rem;
+    margin: 1.5rem 0;
+    background: #f8fafc;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+/* Admonition Blocks */
+.preview-surface .admonitionblock {
+    margin: 1.5rem 0;
+    padding: 1.25rem 1.5rem;
+    border-radius: var(--radius-sm);
+    border-left: 5px solid #3b82f6;
+    background: #f0f9ff;
+}
+.preview-surface .admonitionblock.note { border-left-color: #3b82f6; background: #eff6ff; }
+.preview-surface .admonitionblock.tip { border-left-color: #10b981; background: #ecfdf5; }
+.preview-surface .admonitionblock.important { border-left-color: #f59e0b; background: #fffbeb; }
+.preview-surface .admonitionblock.warning { border-left-color: #ef4444; background: #fef2f2; }
+.preview-surface .admonitionblock.caution { border-left-color: #8b5cf6; background: #f5f3ff; }
+
+/* Sidebar Aside Block */
+.preview-surface .sidebarblock {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #64748b;
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+}
+.preview-surface .sidebarblock .title {
+    font-weight: 800;
+    font-size: 1.15rem;
+    color: #0f172a;
+    margin-bottom: 0.75rem;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 0.35rem;
+}
+
+/* Collapsible Details & Summary */
+.preview-surface details.collapsible {
+    border: 1px solid #cbd5e1;
+    border-radius: var(--radius-sm);
+    background: #f8fafc;
+    margin: 1.5rem 0;
+    overflow: hidden;
+}
+.preview-surface details.collapsible summary.title {
+    padding: 0.75rem 1.25rem;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    cursor: pointer;
+    user-select: none;
+    outline: none;
+    transition: background 0.15s ease;
+}
+.preview-surface details.collapsible summary.title:hover {
+    background: #e2e8f0;
+}
+.preview-surface details.collapsible .content {
+    padding: 1.25rem;
+    background: #ffffff;
+    border-top: 1px solid #e2e8f0;
+}
+
+/* Example & Open Blocks */
+
+.preview-surface .exampleblock {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-left: 4px solid #3b82f6;
+    border-radius: var(--radius-sm);
+    padding: 1.25rem;
+    margin: 1.5rem 0;
+}
+.preview-surface .exampleblock .title {
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+}
+.preview-surface .openblock {
+    border: 1px dashed #94a3b8;
+    border-radius: var(--radius-sm);
+    padding: 1.25rem;
+    margin: 1.5rem 0;
+    background: #fcfcfc;
+}
+.preview-surface .openblock .title {
+    font-weight: 700;
+    color: #475569;
+    margin-bottom: 0.5rem;
+}
+
+/* Blockquote & Verse with Authorship Metadata */
+.preview-surface .quoteblock {
+    border-left: 4px solid #cbd5e1;
+    padding: 0.75rem 1.25rem;
+    margin: 1.5rem 0;
+    background: #f8fafc;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+.preview-surface .quoteblock blockquote {
+    font-style: italic;
+    color: #334155;
+    font-size: 1.05rem;
+    line-height: 1.6;
+}
+.preview-surface .quoteblock .attribution {
+    margin-top: 0.75rem;
+    font-style: normal;
+    font-size: 0.9rem;
+    color: #64748b;
+    font-weight: 600;
+}
+.preview-surface .quoteblock .attribution .author {
+    color: #0f172a;
+}
+.preview-surface .quoteblock .attribution cite {
+    font-style: italic;
+    color: #64748b;
+}
+
+.preview-surface .verseblock {
+    white-space: pre-wrap;
+    font-family: var(--font-serif);
+    font-size: 1.05rem;
+    padding: 1.25rem 1.75rem;
+    background: #fafaf9;
+    border-left: 4px solid #d6d3d1;
+    margin: 1.5rem 0;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+.preview-surface .verseblock pre.content {
+    font-family: inherit;
+    font-size: inherit;
+    color: #292524;
+    line-height: 1.6;
+}
+.preview-surface .verseblock .attribution {
+    margin-top: 0.75rem;
+    font-family: var(--font-sans);
+    font-style: normal;
+    font-size: 0.85rem;
+    color: #78716c;
+    font-weight: 600;
+}
+.preview-surface .verseblock .attribution .author {
+    color: #44403c;
+}
+
+/* Distinct Table Styling with Captions */
+.preview-surface .tableblock {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-size: 0.95rem;
+}
+.preview-surface .tableblock caption.title {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #1e293b;
+    text-align: left;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+.preview-surface .tableblock th,
+.preview-surface .tableblock td {
+    padding: 0.75rem 1rem;
+    border: 1px solid #e2e8f0;
+    text-align: left;
+}
+.preview-surface .tableblock th {
+    background: #f1f5f9;
+    font-weight: 700;
+    color: #0f172a;
+}
+.preview-surface .tableblock tr:nth-child(even) td {
+    background: #f8fafc;
+}
+
+/* Unordered & Ordered Lists with Proper Indentation */
+.preview-surface ul,
+.preview-surface ol {
+    margin: 1rem 0;
+    padding-left: 1.75rem;
+}
+.preview-surface ul.ulist {
+    list-style-type: disc;
+}
+.preview-surface ul.ulist ul {
+    list-style-type: circle;
+    margin: 0.4rem 0;
+    padding-left: 1.5rem;
+}
+.preview-surface ol.olist {
+    list-style-type: decimal;
+}
+.preview-surface ol.olist ol {
+    list-style-type: lower-alpha;
+    margin: 0.4rem 0;
+    padding-left: 1.5rem;
+}
+.preview-surface li {
+    margin-bottom: 0.4rem;
+    color: #334155;
+    line-height: 1.5;
+}
+
+/* Definition / Description Lists */
+.preview-surface .dlist {
+    margin: 1.5rem 0;
+}
+.preview-surface .dlist dt {
+    font-weight: 700;
+    color: #0f172a;
+    font-size: 1rem;
+    margin-top: 1rem;
+}
+.preview-surface .dlist dt:first-child {
+    margin-top: 0;
+}
+.preview-surface .dlist dd {
+    margin-left: 1.5rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0.75rem;
+    color: #475569;
+    line-height: 1.6;
+}
+
+/* Callout List & Badges */
+.preview-surface .colist {
+    margin: 1.5rem 0;
+}
+.preview-surface .colist table {
+    border-collapse: collapse;
+}
+.preview-surface .colist td {
+    padding: 0.35rem 0.5rem;
+    vertical-align: top;
+    border: none;
+}
+.preview-surface .conum {
+    background: #0f172a;
+    color: #ffffff;
+    font-style: normal;
+    font-weight: 700;
+    font-size: 0.75rem;
+    width: 1.35rem;
+    height: 1.35rem;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.4rem;
+    vertical-align: middle;
+}
+
+/* Footnote references & definitions */
+.preview-surface sup.footnote a {
+    color: var(--accent-primary);
+    text-decoration: none;
+    font-weight: 700;
+    padding: 0 0.15rem;
+}
+.preview-surface sup.footnote a:hover {
+    text-decoration: underline;
+}
+.preview-surface .footnotes-defs {
+    margin-top: 2rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e2e8f0;
+    font-size: 0.85rem;
+    color: #475569;
+}
+.preview-surface .footnotes-defs .footnote {
+    margin-bottom: 0.4rem;
+}
+.preview-surface .footnotes-defs .fn-backref {
+    color: var(--accent-primary);
+    text-decoration: none;
+    font-weight: 700;
+}
+.preview-surface .footnotes-defs .fn-backref:hover {
+    text-decoration: underline;
+}
+
+
+/* Listing and Literal blocks */
+.preview-surface .listingblock, .preview-surface .literalblock {
+    background: #0f172a;
+    color: #f8fafc;
+    padding: 1.25rem;
+    border-radius: var(--radius-sm);
+    margin: 1.5rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    overflow-x: auto;
+}
+.preview-surface .listingblock .title, .preview-surface .literalblock .title {
+    font-weight: 700;
+    color: #94a3b8;
+    margin-bottom: 0.5rem;
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+}
+
+/* Interactive & Inline Controls */
+.preview-surface kbd {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 0.15rem 0.4rem;
+    font-size: 0.8rem;
+    font-family: var(--font-mono);
+    box-shadow: 0 1px 0 #94a3b8;
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.preview-surface .button {
+    background: #e2e8f0;
+    border: 1px solid #94a3b8;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+    color: #0f172a;
+    font-size: 0.85rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.preview-surface .menuseq {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+/* Breaks & Dividers */
+.preview-surface hr {
+    border: none;
+    border-top: 2px solid #cbd5e1;
+    margin: 1.5rem 0;
+}
+.preview-surface .page-break {
+    border-top: 1px dashed #94a3b8;
+    margin: 2rem 0;
+    position: relative;
+}
+.preview-surface .page-break::after {
+    content: "Page Break (Print Divider)";
+    position: absolute;
+    right: 0;
+    top: -0.7rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: #e2e8f0;
+    color: #64748b;
+    padding: 0.1rem 0.5rem;
+    border-radius: 3px;
+}
+
+/* Media Elements */
+
+.preview-surface .videoblock video,
+.preview-surface .audioblock audio {
+    max-width: 100%;
+    border-radius: var(--radius-sm);
+    margin-top: 0.5rem;
+}
+.preview-surface .imageblock img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-sm);
+}
+
+.code-block {
+    padding: 1.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: #e2e8f0;
+    background: var(--bg-code);
+    overflow-x: auto;
+    max-height: 450px;
+}
+
+
+/* Responsive Breakpoints */
+@media (max-width: 900px) {
+    body { flex-direction: column; }
+    .sidebar { width: 100%; height: auto; position: static; }
+    .main-stage { padding: 1.5rem 1rem; }
+}

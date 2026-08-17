@@ -11,7 +11,25 @@ Versioning follows https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
 == [Unreleased]
 
+== [0.1.0a2] — 2026-08-17
+
+=== Added
+
+* Static zero-JS E2E showcase galleries for HTML5 (`examples/gallery/index.html`) and XHTML (`examples/gallery/index-xhtml.html`) showcasing all 39 ASG node types with interactive CSS tab navigation.
+* GitHub Actions workflow (`.github/workflows/pages.yml`) to automatically deploy the showcase galleries to GitHub Pages.
+* `asciidoctype.linter` module for auditing custom Chameleon templates against insecure `structure` directives and syntax errors.
+* Security enhancements to `AsciiDoctypeRenderer`: `strict` mode, `validate_templates` startup auditing, and `max_depth` recursion depth guards.
+
+=== Changed
+
+* Upgraded `asciidoctrine` dependency constraint to `>=0.2.0a1` taking advantage of upstream parser fixes for quote/verse attribution, list continuations (`+`), code listing callouts, page breaks (`<<<`), and document footnote catalogs.
+* Updated `html5/document.html` and `xhtml/document.html` to render document-level footnote bibliographies from the resolved `footnotes` ASG collection.
+* Updated `footnote.html` templates to support sequential `index` fields and standard `_footnote_{id/index}` anchor IDs.
+* Updated `callout.html` and `calloutListItem.html` to support numeric `value` fields and render semantic `.conum` circular badges.
+
 == [0.1.0a1] — 2026-08-11
+
+
 
 Initial pre-release of AsciiDoctype.
 

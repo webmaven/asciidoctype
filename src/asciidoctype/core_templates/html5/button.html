@@ -1,1 +1,1 @@
-<b class="button" tal:content="node.get('label', '')" />
+<b class="button"><tal:block tal:condition="node.get('value')" tal:content="node.get('value')" /><tal:block tal:condition="python:not node.get('value') and node.get('label')" tal:content="node.get('label')" /><tal:block tal:condition="python:not node.get('value') and not node.get('label') and node.get('inlines')" tal:repeat="inline node.get('inlines', [])" tal:replace="structure renderer.render(inline, ctx)" /></b>

@@ -1,4 +1,5 @@
 """Tests for ref and footnote inline node rendering in HTML5 and XHTML."""
+
 from asciidoctype import AsciiDoctypeRenderer
 
 

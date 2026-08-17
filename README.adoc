@@ -10,8 +10,9 @@ image:https://img.shields.io/badge/License-Apache%202.0-blue.svg[Apache 2.0 Lice
 image:https://img.shields.io/badge/python-%3E%3D3.10-green[Python 3.10+]
 image:https://img.shields.io/badge/chameleon-%3E%3D4.0-orange[Chameleon 4.0+]
 image:https://img.shields.io/badge/latex2mathml-%3E%3D3.77-purple[latex2mathml 3.77+]
-image:https://img.shields.io/badge/asciidoctrine-%3E%3D0.1.0a12-blue[AsciiDoctrine 0.1.0a12+]
+image:https://img.shields.io/badge/asciidoctrine-%3E%3D0.2.0a1-blue[AsciiDoctrine 0.2.0a1+]
 image:https://img.shields.io/pypi/v/asciidoctype.svg[PyPI, link=https://pypi.org/project/asciidoctype/]
+
 
 AsciiDoctype is a **headless, pure-Python rendering library** that lowers the
 Resolved Abstract Semantic Graph (ASG) produced by
@@ -195,6 +196,9 @@ class AsciiDoctypeRenderer:
         self,
         target_format: str = "html5",
         search_paths: Optional[List[Path]] = None,
+        strict: bool = False,
+        validate_templates: bool = True,
+        max_depth: int = 500,
     ) -> None: ...
 
     def render(
@@ -211,10 +215,24 @@ class AsciiDoctypeRenderer:
   Ordered list of `Path` objects for template override directories. The bundled
   core templates are always appended last as the final fallback.
 
+`strict`::
+  `bool` (default `False`). When `True`, enforces fail-fast validation: rejects
+  unrecognized node types, disallowed URI schemes (`javascript:`, etc.), and
+  template security audit warnings.
+
+`validate_templates`::
+  `bool` (default `True`). Audits custom search paths on initialization using
+  `asciidoctype.linter` to detect insecure template directives (`structure`).
+
+`max_depth`::
+  `int` (default `500`). Maximum recursion depth protection against circular or
+  maliciously deep ASG trees.
+
 `render(node, context=None)`::
   Recursively renders an ASG node dictionary and returns a markup string.
   Raises `TypeError` if `node` is not a dict with a `"name"` key.
   Raises `AsciiDoctypeRenderingError` if template execution fails.
+
 
 === `AsciiDoctypeRenderingError`
 
@@ -235,6 +253,7 @@ except AsciiDoctypeRenderingError as e:
 
 == Project Links
 
+* Showcase Gallery: https://webmaven.github.io/asciidoctype/ (Zero-JS E2E Node Gallery)
 * PyPI: https://pypi.org/project/asciidoctype/
 * Source: https://github.com/webmaven/asciidoctype
 * Issues: https://github.com/webmaven/asciidoctype/issues
@@ -243,3 +262,4 @@ except AsciiDoctypeRenderingError as e:
 * Architecture: link:ARCHITECTURE.adoc[ARCHITECTURE.adoc] — design, internals, ASG schemas
 * Developer Guide: link:AGENTS.adoc[AGENTS.adoc] — development setup, standards, and workflows
 * Contributing: link:CONTRIBUTING.adoc[CONTRIBUTING.adoc] — how to submit changes
+

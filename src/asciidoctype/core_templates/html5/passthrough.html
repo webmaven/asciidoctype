@@ -13,7 +13,13 @@
         </div>
     </tal:block>
     <tal:block tal:condition="python:style not in ('latexmath', 'stem')">
-        <tal:block tal:condition="node.get('inlines')" tal:repeat="inline node.get('inlines', [])" tal:replace="structure renderer.render(inline, ctx)" />
+        <tal:block tal:condition="node.get('inlines')">
+            <tal:block tal:repeat="inline node.get('inlines', [])">
+                <tal:block tal:condition="python:inline.get('name') == 'text'" tal:replace="structure python:inline.get('value', '')" />
+                <tal:block tal:condition="python:inline.get('name') != 'text'" tal:replace="structure renderer.render(inline, ctx)" />
+            </tal:block>
+        </tal:block>
         <tal:block tal:condition="not:node.get('inlines')" tal:replace="structure val" />
     </tal:block>
 </tal:block>
+

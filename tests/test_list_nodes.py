@@ -1,4 +1,5 @@
 """Tests for list and listItem rendering in HTML5 and XHTML."""
+
 from asciidoctype import AsciiDoctypeRenderer
 
 

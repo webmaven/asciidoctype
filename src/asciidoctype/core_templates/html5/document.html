@@ -1,16 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en"
+      tal:define="raw_title python:node.get('header', {}).get('title') or node.get('title');
+                  doc_title python:raw_title[0].get('value', 'Document') if (isinstance(raw_title, list) and len(raw_title) > 0 and isinstance(raw_title[0], dict)) else (raw_title or 'Document');
+                  has_title python:bool(node.get('header', {}).get('title') or node.get('title'))">
 <head>
     <meta charset="UTF-8">
-    <title tal:content="node.get('header', {}).get('title') or 'Document'"></title>
+    <title tal:content="doc_title"></title>
 </head>
 <body>
-    <div id="header" tal:condition="node.get('header', {}).get('title')">
-        <h1 tal:content="node.get('header', {}).get('title')"></h1>
+    <div id="header" tal:condition="has_title">
+        <h1 tal:content="doc_title"></h1>
     </div>
     <div id="content">
         <tal:block tal:repeat="block node.get('blocks', [])"
                    tal:replace="structure renderer.render(block, ctx)" />
     </div>
+    <div id="footnotes" tal:condition="node.get('footnotes')">
+        <hr />
+        <div tal:repeat="fn node.get('footnotes', [])" class="footnote" tal:attributes="id string:_footnotedef_${fn.get('index', fn.get('number', ''))}">
+            <a tal:attributes="href string:#_footnote_${fn.get('id') or fn.get('index') or fn.get('number', '')}" tal:content="fn.get('index', fn.get('number', ''))">1</a>. <tal:block tal:condition="fn.get('inlines')" tal:repeat="inline fn.get('inlines', [])" tal:replace="structure renderer.render(inline, ctx)" /><tal:block tal:condition="not:fn.get('inlines')" tal:content="fn.get('text', fn.get('value', ''))" />
+        </div>
+    </div>
 </body>
 </html>
+
+

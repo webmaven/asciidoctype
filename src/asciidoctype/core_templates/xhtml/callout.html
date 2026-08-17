@@ -1,1 +1,2 @@
-<i class="conum" tal:attributes="data-value node.get('number', 1)">(<tal:block tal:replace="node.get('number', 1)" />)</i>
+<tal:block tal:define="num python:node.get('value') or node.get('number') or node.get('index') or ''"><i class="conum" tal:attributes="data-value num"><b><tal:block tal:content="num" /></b></i></tal:block>
+

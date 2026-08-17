@@ -1,4 +1,5 @@
 """Tests for block and inline image node rendering in HTML5 and XHTML."""
+
 from asciidoctype import AsciiDoctypeRenderer
 
 

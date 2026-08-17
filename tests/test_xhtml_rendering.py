@@ -1,4 +1,5 @@
 """Tests for XHTML Strict rendering pipeline."""
+
 from asciidoctype import AsciiDoctypeRenderer
 
 
@@ -46,3 +47,24 @@ def test_render_xhtml_paragraph_and_span():
     output = renderer.render(node)
     assert 'id="p-xhtml"' in output
     assert "<strong>Strict Bold</strong>" in output
+
+
+def test_render_xhtml_listing_node():
+    """Test listing block rendering in XHTML format."""
+    renderer = AsciiDoctypeRenderer(target_format="xhtml")
+    node = {
+        "name": "listing",
+        "type": "block",
+        "form": "delimited",
+        "delimiter": "----",
+        "attributes": {"id": "listing-xhtml", "language": "python"},
+        "title": [{"name": "text", "type": "string", "value": "XHTML Code"}],
+        "inlines": [{"name": "text", "type": "string", "value": "x = 42\nprint(x)"}],
+    }
+    output = renderer.render(node)
+    assert '<div class="listingblock" id="listing-xhtml">' in output
+    assert '<div class="title">XHTML Code</div>' in output
+    expected_code = (
+        '<pre class="highlight python"><code class="language-python">x = 42\nprint(x)</code></pre>'
+    )
+    assert expected_code in output

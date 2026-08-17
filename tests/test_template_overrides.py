@@ -1,4 +1,5 @@
 """Tests for template inheritance, custom theme paths, and fallback precedence."""
+
 from pathlib import Path
 
 from asciidoctype import AsciiDoctypeRenderer
@@ -12,10 +13,10 @@ def test_custom_template_override(tmp_path: Path):
     # Create custom paragraph.html in custom_theme
     custom_paragraph = custom_theme / "paragraph.html"
     custom_paragraph.write_text(
-        '<p class="custom-override" tal:attributes="id node.get(\'attributes\', {}).get(\'id\')">\n'
-        '  <tal:block tal:repeat="inline node.get(\'inlines\', [])"\n'
+        "<p class=\"custom-override\" tal:attributes=\"id node.get('attributes', {}).get('id')\">\n"
+        "  <tal:block tal:repeat=\"inline node.get('inlines', [])\"\n"
         '             tal:replace="structure renderer.render(inline, ctx)" />\n'
-        '</p>\n'
+        "</p>\n"
     )
 
     renderer = AsciiDoctypeRenderer(target_format="html5", search_paths=[custom_theme])

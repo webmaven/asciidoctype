@@ -1,4 +1,5 @@
 """Tests for HTML5 inline elements rendering (text, span)."""
+
 import pytest
 
 from asciidoctype import AsciiDoctypeRenderer, AsciiDoctypeRenderingError
@@ -53,7 +54,7 @@ def test_render_invalid_node_structure():
 def test_render_rendering_error():
     """Test rendering failure raises AsciiDoctypeRenderingError."""
     renderer = AsciiDoctypeRenderer(target_format="html5")
-    # Missing value attribute in text node causes template execution error
-    bad_node = {"name": "text"}
+    # Invalid non-iterable structure for blocks causes template execution failure
+    bad_node = {"name": "section", "blocks": 12345}
     with pytest.raises(AsciiDoctypeRenderingError):
         renderer.render(bad_node)

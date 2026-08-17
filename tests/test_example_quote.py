@@ -1,4 +1,5 @@
 """Tests for example and quote node rendering in HTML5 and XHTML."""
+
 from asciidoctype import AsciiDoctypeRenderer
 
 

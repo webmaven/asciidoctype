@@ -1,1 +1,1 @@
-<kbd tal:condition="node.get('keys')" tal:repeat="key node.get('keys', [])" tal:content="key" /><kbd tal:condition="not:node.get('keys')" tal:content="node.get('value', '')" />
+<tal:block tal:define="raw_val python:node.get('value') or node.get('keys'); keys python:raw_val if isinstance(raw_val, list) else ([raw_val] if raw_val else [])"><kbd tal:repeat="key keys" tal:content="key"></kbd></tal:block>

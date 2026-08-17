@@ -1,4 +1,5 @@
 """Tests for admonition and sidebar node rendering in HTML5 and XHTML."""
+
 from asciidoctype import AsciiDoctypeRenderer
 
 

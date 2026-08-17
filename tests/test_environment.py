@@ -1,4 +1,5 @@
 """Test project environment and dependencies setup."""
+
 import asciidoctype
 
 

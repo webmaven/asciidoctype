@@ -301,9 +301,9 @@ Output: `<p id="…" class="…">…inline content…</p>`
 |`str`
 |The opening delimiter string (e.g. `"----"`).
 
-|`value`
-|`str`
-|Pre-formatted source code text content.
+|`inlines`
+|`List[dict]`
+|Source code content inline text nodes and callouts.
 
 |`title`
 |`List[dict]`
@@ -419,22 +419,23 @@ Output: `<div class="admonitionblock {variant}">` containing optional title and 
 |Fixed.
 
 |`rows`
-|`List[List[dict]]`
-|Row lists containing cell node lists.
+|`List[dict]`
+|Row block dictionaries containing `cells` list of cell dictionaries (`colspan`, `rowspan`, `blocks`/`inlines`).
 
 |`header_rows`
-|`List[List[dict]]`
-|Rows to render in `<thead>`.
+|`List[dict]`
+|Optional explicit header row block dictionaries (or derived from `options="header"`).
 
 |`attributes`
 |`dict`
-|Optional `id`, `cols`, `options`.
+|Optional `id`, `cols`, `options`, `role`.
 |===
 
 Template: `table.html` +
 Output: `<table>` containing optional `<caption>`, `<thead>`, `<tbody>`, `<tr>`, `<th>`, and `<td>` elements.
 
 **Coverage status:** ✅ Implemented
+
 
 ---
 
@@ -796,12 +797,19 @@ recursive rendering while clearly marking unsupported nodes in the output.
 ....
 asciidoctype/
 ├── bin/
-│   └── check.sh
+│   ├── check.sh
+│   └── generate-gallery.sh
+├── examples/
+│   └── gallery/
+│       ├── generate_gallery.py
+│       ├── gallery.css
+│       └── index.html
 ├── src/
 │   └── asciidoctype/
 │       ├── __init__.py              # Public API exports
-│       ├── exceptions.py            # AsciiDoctypeRenderingError
-│       ├── renderer.py              # AsciiDoctypeRenderer
+│       ├── exceptions.py            # Rendering, Security & Warning types
+│       ├── linter.py                # Template static analysis & security auditor
+│       ├── renderer.py              # AsciiDoctypeRenderer dispatch engine
 │       └── core_templates/
 │           ├── html5/               # HTML5 pipeline templates
 │           │   ├── admonition.html
@@ -841,9 +849,11 @@ asciidoctype/
 │           │   ├── table.html
 │           │   ├── text.html
 │           │   ├── thematic_break.html
+│           │   ├── title.html
 │           │   ├── verse.html
 │           │   └── video.html
 │           └── xhtml/               # XHTML 1.0 Strict pipeline templates
+
 │               ├── admonition.html
 │               ├── audio.html
 │               ├── break.html
@@ -881,8 +891,10 @@ asciidoctype/
 │               ├── table.html
 │               ├── text.html
 │               ├── thematic_break.html
+│               ├── title.html
 │               ├── verse.html
 │               └── video.html
+
 ├── tests/
 │   ├── conftest.py
 │   ├── test_admonition_sidebar.py

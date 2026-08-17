@@ -4,8 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "asciidoctype"
-version = "0.1.0a1"
+version = "0.1.0a2"
 description = "A headless, pure-Python HTML5 and XHTML rendering library for AsciiDoctrine ASG dictionaries."
+
 readme = {file = "README.adoc", content-type = "text/plain"}
 license = {text = "Apache-2.0"}
 requires-python = ">=3.10"
@@ -25,9 +26,10 @@ classifiers = [
 ]
 dependencies = [
     "chameleon>=4.0.0",
-    "asciidoctrine>=0.1.0a12",
+    "asciidoctrine>=0.2.0a1",
     "latex2mathml>=3.77.0",
 ]
+
 
 [project.urls]
 Homepage = "https://github.com/webmaven/asciidoctype"

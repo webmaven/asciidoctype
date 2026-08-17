@@ -1,8 +1,11 @@
 <details class="collapsible" tal:attributes="id node.get('attributes', {}).get('id')">
     <summary tal:condition="node.get('title')" class="title">
-        <tal:block tal:repeat="inline node.get('title', [])" tal:replace="structure renderer.render(inline, ctx)" />
+        <tal:block tal:condition="python:isinstance(node.get('title'), list)" tal:repeat="inline node.get('title', [])" tal:replace="structure renderer.render(inline, ctx)" />
+        <tal:block tal:condition="python:isinstance(node.get('title'), dict)" tal:replace="structure renderer.render(node.get('title'), ctx)" />
+        <tal:block tal:condition="python:isinstance(node.get('title'), str)" tal:content="node.get('title')" />
     </summary>
     <div class="content">
         <tal:block tal:repeat="block node.get('blocks', [])" tal:replace="structure renderer.render(block, ctx)" />
     </div>
 </details>
+

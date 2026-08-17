@@ -1,4 +1,5 @@
 """TCK Integration tests for inline macros and break nodes in HTML5 and XHTML."""
+
 from asciidoctrine.lark_parser import parse_to_ast
 from asciidoctrine.resolver import ASGResolver, WorkspaceCatalog
 
@@ -20,9 +21,12 @@ menu:File[Save]
     renderer = AsciiDoctypeRenderer(target_format="html5")
     output = renderer.render(asg)
 
-    assert "<kbd>" in output
-    assert '<b class="button">' in output or '<kbd class="button">' in output
-    assert '<span class="menuseq">' in output or "File" in output
+    assert "<kbd>Ctrl</kbd>" in output
+    assert "<kbd>S</kbd>" in output
+    assert '<b class="button">Save</b>' in output
+    assert '<span class="menuseq">' in output
+    assert '<b class="menu">File</b>' in output
+    assert '<b class="menuitem">Save</b>' in output
 
 
 def test_render_breaks_and_callout_xhtml():

@@ -1,4 +1,5 @@
 """TCK Integration tests for special blocks in HTML5 and XHTML."""
+
 from asciidoctrine.lark_parser import parse_to_ast
 from asciidoctrine.resolver import ASGResolver, WorkspaceCatalog
 

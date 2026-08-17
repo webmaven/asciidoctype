@@ -1,0 +1,1 @@
+<tal:block tal:repeat="inline node.get('inlines', [])" tal:replace="structure renderer.render(inline, ctx)" /><tal:block tal:condition="not:node.get('inlines')" tal:content="node.get('value', '')" />
