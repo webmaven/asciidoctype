@@ -126,3 +126,26 @@ def test_real_footnote_html5():
 
     assert '<sup class="footnote">' in output or 'class="footnote"' in output
     assert "Important detail" in output
+
+
+def test_real_asciidoctrine_source_highlighting():
+    """Test AsciiDoctrine real parsed ASG source block with custom highlighter."""
+    doc = """
+[source,python]
+----
+def greet(name: str):
+    return f"Hello, {name}"
+----
+"""
+    asg = resolve_adoc(doc)
+
+    def pygments_like_highlighter(code: str, lang: str) -> str:
+        return f'<div class="highlighted-code lang-{lang}">{code.strip()}</div>'
+
+    renderer = AsciiDoctypeRenderer(target_format="html5", highlighter=pygments_like_highlighter)
+    html = renderer.render(asg)
+    expected = (
+        '<div class="highlighted-code lang-python">'
+        'def greet(name: str):\n    return f"Hello, {name}"</div>'
+    )
+    assert expected in html
