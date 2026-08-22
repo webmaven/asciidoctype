@@ -12,7 +12,7 @@ into HTML5 or XHTML representations via Chameleon ZPT templates.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Callable, Dict, List, Optional, Set
 
 from chameleon import PageTemplateLoader
 
@@ -20,6 +20,8 @@ from .exceptions import AsciiDoctypeRenderingError, AsciiDoctypeSecurityError
 from .linter import audit_search_paths
 
 DANGEROUS_URI_SCHEMES = ("javascript:", "vbscript:", "data:text/html")
+
+HighlighterCallable = Callable[[str, str], Optional[str]]
 
 
 class AsciiDoctypeRenderer:
@@ -34,6 +36,7 @@ class AsciiDoctypeRenderer:
     `search_paths` (list[Path]):: Ordered list of template search directories.
     `strict` (bool):: Whether strict schema, template, and URI validation is enforced.
     `loader` (PageTemplateLoader):: Chameleon template loader initialized with search paths.
+    `highlighter` (HighlighterCallable, optional):: Syntax highlighting callable.
 
     *Example:*
 
@@ -51,6 +54,7 @@ class AsciiDoctypeRenderer:
         strict: bool = False,
         validate_templates: bool = True,
         max_depth: int = 500,
+        highlighter: Optional[HighlighterCallable] = None,
     ):
         """Initialize the rendering engine with format choices and template search paths.
 
@@ -67,6 +71,8 @@ class AsciiDoctypeRenderer:
                                                 for security and syntax flaws. Defaults to `True`.
         `max_depth` (int, optional):: Maximum recursive rendering depth before triggering stack
                                       protection. Defaults to `500`.
+        `highlighter` (HighlighterCallable, optional):: Optional callable accepting `(code, lang)`
+                                                        and returning highlighted markup or `None`.
 
         *Raises:*
 
@@ -81,6 +87,7 @@ class AsciiDoctypeRenderer:
 
         self.strict = strict
         self.max_depth = max_depth
+        self.highlighter = highlighter
 
         base_dir = Path(__file__).parent.resolve()
         core_fallback = base_dir / "core_templates" / self.target_format
@@ -96,6 +103,56 @@ class AsciiDoctypeRenderer:
             [str(p) for p in self.search_paths],
             default_extension=".html",
         )
+
+    def extract_text(self, node: Any) -> str:
+        """Extract plain text representation from an ASG node or its inline hierarchy.
+
+        *Parameters:*
+
+        `node` (dict[str, Any] or any):: ASG node structure or child inline node.
+
+        *Returns:*
+
+        `str`:: The extracted plain text string.
+        """
+        if isinstance(node, str):
+            return node
+        if not isinstance(node, dict):
+            return ""
+        inlines = node.get("inlines")
+        if isinstance(inlines, list) and inlines:
+            return "".join(self.extract_text(child) for child in inlines)
+        val = node.get("value")
+        if isinstance(val, str):
+            return val
+        return ""
+
+    def highlight_code(
+        self, node: Dict[str, Any], ctx: Optional[Dict[str, Any]] = None
+    ) -> Optional[str]:
+        """Highlight code content within an ASG node using the configured highlighter callable.
+
+        *Parameters:*
+
+        `node` (dict[str, Any]):: ASG node representing a source or listing block.
+        `ctx` (dict[str, Any], optional):: Contextual dictionary passed down the
+                                           rendering pipeline.
+
+        *Returns:*
+
+        `str` or `None`:: The highlighted markup if a highlighter callable is configured
+                          and successfully produces output, otherwise `None`.
+        """
+        if self.highlighter is None:
+            return None
+        code = self.extract_text(node)
+        attributes = node.get("attributes")
+        lang = ""
+        if isinstance(attributes, dict):
+            lang = attributes.get("language") or attributes.get("lang") or ""
+        if not lang:
+            lang = node.get("language") or ""
+        return self.highlighter(code, str(lang))
 
     def render(self, node: Dict[str, Any], context: Optional[Dict[str, Any]] = None) -> str:
         """Central dispatch router for resolving and rendering ASG nodes recursively.
@@ -161,6 +218,8 @@ class AsciiDoctypeRenderer:
             candidates = ["image_inline.html", "image.html"]
         elif effective_node.get("name") == "ref" and effective_node.get("variant") == "footnote":
             candidates = ["footnote.html", "ref.html"]
+        elif effective_node.get("name") == "source":
+            candidates = ["source.html", "listing.html"]
         else:
             candidates = [f"{node_name}.html"]
 

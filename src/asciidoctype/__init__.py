@@ -9,7 +9,7 @@ from .exceptions import (
     AsciiDoctypeSecurityError,
     AsciiDoctypeSecurityWarning,
 )
-from .renderer import AsciiDoctypeRenderer
+from .renderer import AsciiDoctypeRenderer, HighlighterCallable
 
 __version__ = "0.1.0a2"
 
@@ -19,4 +19,5 @@ __all__ = [
     "AsciiDoctypeRenderingError",
     "AsciiDoctypeSecurityError",
     "AsciiDoctypeSecurityWarning",
+    "HighlighterCallable",
 ]
