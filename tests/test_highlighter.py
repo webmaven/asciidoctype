@@ -119,3 +119,84 @@ def test_render_source_node_fallback_to_listing():
     # listing.html produces a listingblock
     assert '<div class="listingblock"' in output
     assert "print('hello')" in output
+
+
+def test_render_listing_with_highlighter_html5():
+    def mock_highlighter(code: str, lang: str) -> str:
+        return f'<div class="custom-highlight" data-lang="{lang}">{code}</div>'
+
+    renderer = AsciiDoctypeRenderer(target_format="html5", highlighter=mock_highlighter)
+    node = {
+        "name": "listing",
+        "type": "block",
+        "attributes": {"id": "code-1", "language": "python"},
+        "inlines": [{"name": "text", "value": "x = 10"}],
+    }
+    output = renderer.render(node)
+    assert '<div class="listingblock" id="code-1">' in output
+    assert '<div class="custom-highlight" data-lang="python">x = 10</div>' in output
+    assert "<code" not in output
+
+
+def test_render_listing_highlighter_fallback_on_none_html5():
+    def none_highlighter(code: str, lang: str):
+        return None
+
+    renderer = AsciiDoctypeRenderer(target_format="html5", highlighter=none_highlighter)
+    node = {
+        "name": "listing",
+        "type": "block",
+        "attributes": {"language": "python"},
+        "inlines": [{"name": "text", "value": "x = 10"}],
+    }
+    output = renderer.render(node)
+    expected = '<pre class="highlight python"><code class="language-python">x = 10</code></pre>'
+    assert expected in output
+
+
+def test_render_listing_highlighter_fallback_on_exception_html5():
+    def broken_highlighter(code: str, lang: str):
+        raise RuntimeError("Highlighter crashed")
+
+    renderer = AsciiDoctypeRenderer(target_format="html5", highlighter=broken_highlighter)
+    node = {
+        "name": "listing",
+        "type": "block",
+        "attributes": {"language": "python"},
+        "inlines": [{"name": "text", "value": "x = 10"}],
+    }
+    output = renderer.render(node)
+    expected = '<pre class="highlight python"><code class="language-python">x = 10</code></pre>'
+    assert expected in output
+
+
+def test_render_listing_value_and_inlines_xhtml():
+    renderer = AsciiDoctypeRenderer(target_format="xhtml")
+    node_val = {
+        "name": "listing",
+        "type": "block",
+        "attributes": {"language": "rust"},
+        "value": "fn main() {}",
+    }
+    out_val = renderer.render(node_val)
+    expected = '<pre class="highlight rust"><code class="language-rust">fn main() {}</code></pre>'
+    assert expected in out_val
+
+
+def test_render_listing_with_highlighter_xhtml():
+    def mock_highlighter(code: str, lang: str) -> str:
+        return f'<div class="custom-highlight" data-lang="{lang}">{code}</div>'
+
+    renderer = AsciiDoctypeRenderer(target_format="xhtml", highlighter=mock_highlighter)
+    node = {
+        "name": "listing",
+        "type": "block",
+        "title": "Code Example",
+        "attributes": {"id": "code-2", "language": "python"},
+        "value": "y = 20",
+    }
+    output = renderer.render(node)
+    assert '<div class="listingblock" id="code-2">' in output
+    assert '<div class="title">Code Example</div>' in output
+    assert '<div class="custom-highlight" data-lang="python">y = 20</div>' in output
+    assert "<code" not in output
