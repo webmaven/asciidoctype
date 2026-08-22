@@ -91,6 +91,21 @@ def test_renderer_highlight_code():
     assert renderer_hl.highlight_code(node_root_lang) == '<pre class="py">x = 1</pre>'
 
 
+def test_renderer_highlight_code_exception_fallback():
+    """Verify highlight_code catches exceptions from highlighter and returns None."""
+
+    def failing_highlighter(code: str, lang: str):
+        raise RuntimeError("Highlighting failed")
+
+    renderer = AsciiDoctypeRenderer(highlighter=failing_highlighter)
+    node = {
+        "name": "source",
+        "attributes": {"language": "python"},
+        "value": "print('fail')",
+    }
+    assert renderer.highlight_code(node) is None
+
+
 def test_render_source_node_fallback_to_listing():
     """Verify 'source' node resolves candidates ['source.html', 'listing.html']."""
     renderer = AsciiDoctypeRenderer(target_format="html5")

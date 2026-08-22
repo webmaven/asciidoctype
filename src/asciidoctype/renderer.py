@@ -152,7 +152,10 @@ class AsciiDoctypeRenderer:
             lang = attributes.get("language") or attributes.get("lang") or ""
         if not lang:
             lang = node.get("language") or ""
-        return self.highlighter(code, str(lang))
+        try:
+            return self.highlighter(code, str(lang))
+        except Exception:
+            return None
 
     def render(self, node: Dict[str, Any], context: Optional[Dict[str, Any]] = None) -> str:
         """Central dispatch router for resolving and rendering ASG nodes recursively.
