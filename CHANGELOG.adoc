@@ -11,6 +11,20 @@ Versioning follows https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
 == [Unreleased]
 
+== [0.1.0a3] — 2026-08-22
+
+=== Added
+
+* Support for injectable syntax highlighter callable in `AsciiDoctypeRenderer` via optional `highlighter: HighlighterCallable` parameter (`Callable[[str, str], Optional[str]]`) for custom server-side syntax highlighting (e.g. Pygments).
+* Exported `HighlighterCallable` in public API `asciidoctype`.
+* Added `extract_text` and `highlight_code` helper utilities on `AsciiDoctypeRenderer`.
+* Added candidate resolution mapping `source` nodes to `["source.html", "listing.html"]`.
+
+=== Fixed
+
+* Fixed `listing.html` (HTML5 and XHTML) to evaluate `renderer.highlight_code(node, ctx)` and fall back to rendering both `node['inlines']` and `node['value']` cleanly (resolving Issue #1).
+* Fixed GitHub Pages deployment workflow in `.github/workflows/pages.yml` by removing unauthorized `enablement: true` flag.
+
 == [0.1.0a2] — 2026-08-17
 
 === Added

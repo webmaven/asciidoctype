@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "asciidoctype"
-version = "0.1.0a2"
+version = "0.1.0a3"
 description = "A headless, pure-Python HTML5 and XHTML rendering library for AsciiDoctrine ASG dictionaries."
 
 readme = {file = "README.adoc", content-type = "text/plain"}
