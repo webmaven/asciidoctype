@@ -11,6 +11,10 @@ Versioning follows https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
 == [Unreleased]
 
+=== Changed
+
+* Updated `asciidoctrine` dependency constraint to `>=0.2.0a4`.
+
 == [0.1.0a3] — 2026-08-22
 
 === Added

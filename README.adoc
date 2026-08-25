@@ -10,7 +10,7 @@ image:https://img.shields.io/badge/License-Apache%202.0-blue.svg[Apache 2.0 Lice
 image:https://img.shields.io/badge/python-%3E%3D3.10-green[Python 3.10+]
 image:https://img.shields.io/badge/chameleon-%3E%3D4.0-orange[Chameleon 4.0+]
 image:https://img.shields.io/badge/latex2mathml-%3E%3D3.77-purple[latex2mathml 3.77+]
-image:https://img.shields.io/badge/asciidoctrine-%3E%3D0.2.0a1-blue[AsciiDoctrine 0.2.0a1+]
+image:https://img.shields.io/badge/asciidoctrine-%3E%3D0.2.0a4-blue[AsciiDoctrine 0.2.0a4+]
 image:https://img.shields.io/pypi/v/asciidoctype.svg[PyPI, link=https://pypi.org/project/asciidoctype/]
 
 
