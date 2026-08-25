@@ -11,6 +11,7 @@ into HTML5 or XHTML representations via Chameleon ZPT templates.
 * Polymorphic node dispatching for inline images and footnote references.
 """
 
+import re
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set
 
@@ -126,6 +127,79 @@ class AsciiDoctypeRenderer:
         if isinstance(val, str):
             return val
         return ""
+
+    def extract_col_widths(self, node: Dict[str, Any]) -> List[str]:
+        """Extract and calculate proportional column widths from table columns or cols attribute.
+
+        *Parameters:*
+
+        `node` (dict[str, Any]):: ASG node representing a table block.
+
+        *Returns:*
+
+        `list[str]`:: A list of percentage strings (e.g. `["20%", "60%", "20%"]`),
+                      or empty list if no valid column specifications are found.
+        """
+        if not isinstance(node, dict):
+            return []
+
+        # 1. Check for structured columns collection (spec-compliant ASG)
+        columns = node.get("columns")
+        if isinstance(columns, list) and columns:
+            raw_widths: List[float] = []
+            has_raw = False
+            for col in columns:
+                if isinstance(col, dict):
+                    w = col.get("width")
+                    if isinstance(w, str) and w.endswith("%"):
+                        try:
+                            raw_widths.append(float(w[:-1].strip()))
+                            has_raw = True
+                            continue
+                        except ValueError:
+                            pass
+                    elif isinstance(w, (int, float)):
+                        raw_widths.append(float(w))
+                        has_raw = True
+                        continue
+                raw_widths.append(1.0)
+            if has_raw and sum(raw_widths) > 0:
+                total = sum(raw_widths)
+                return [f"{round((w / total) * 100, 4):g}%" for w in raw_widths]
+
+        # 2. Fallback: Parse attributes.cols string
+        attributes = node.get("attributes")
+        cols_str = ""
+        if isinstance(attributes, dict):
+            cols_str = str(attributes.get("cols") or "").strip()
+        if not cols_str:
+            cols_str = str(node.get("cols") or "").strip()
+        if not cols_str:
+            return []
+
+        parts = [p.strip() for p in re.split(r"[,;]", cols_str) if p.strip()]
+        if not parts:
+            return []
+
+        raw_parts: List[float] = []
+        for part in parts:
+            mult_match = re.match(r"^(\d+)\*(.*)$", part)
+            if mult_match:
+                count = int(mult_match.group(1))
+                rest = mult_match.group(2).strip()
+                num_match = re.search(r"(\d+(?:\.\d+)?)", rest)
+                w = float(num_match.group(1)) if num_match else 1.0
+                raw_parts.extend([w] * count)
+            else:
+                num_match = re.search(r"(\d+(?:\.\d+)?)", part)
+                w = float(num_match.group(1)) if num_match else 1.0
+                raw_parts.append(w)
+
+        total_sum = sum(raw_parts)
+        if total_sum <= 0:
+            return []
+
+        return [f"{round((w / total_sum) * 100, 4):g}%" for w in raw_parts]
 
     def highlight_code(
         self, node: Dict[str, Any], ctx: Optional[Dict[str, Any]] = None

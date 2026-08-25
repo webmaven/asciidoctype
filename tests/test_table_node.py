@@ -89,3 +89,46 @@ def test_render_table_xhtml():
     output = renderer.render(node)
     assert 'class="tableblock"' in output
     assert "<td>Value 1</td>" in output
+
+
+def test_extract_col_widths():
+    renderer = AsciiDoctypeRenderer()
+
+    # Proportions: 1 + 3 + 1 = 5
+    assert renderer.extract_col_widths({"attributes": {"cols": "1,3,1"}}) == ["20%", "60%", "20%"]
+
+    # Explicit percentages
+    assert renderer.extract_col_widths({"attributes": {"cols": "20%,80%"}}) == ["20%", "80%"]
+
+    # Equal columns / repeat multiplier
+    assert renderer.extract_col_widths({"attributes": {"cols": "3*"}}) == [
+        "33.3333%",
+        "33.3333%",
+        "33.3333%",
+    ]
+
+    # Multiplier with width
+    assert renderer.extract_col_widths({"attributes": {"cols": "2*1,2"}}) == ["25%", "25%", "50%"]
+
+    # Alignment and style specifiers
+    assert renderer.extract_col_widths({"attributes": {"cols": ">1s,^3e,<1"}}) == [
+        "20%",
+        "60%",
+        "20%",
+    ]
+
+    # Structured columns list (specification-compliant ASG)
+    assert renderer.extract_col_widths({"columns": [{"width": "20%"}, {"width": "80%"}]}) == [
+        "20%",
+        "80%",
+    ]
+    assert renderer.extract_col_widths({"columns": [{"width": 1}, {"width": 3}, {"width": 1}]}) == [
+        "20%",
+        "60%",
+        "20%",
+    ]
+
+    # Empty or missing attributes
+    assert renderer.extract_col_widths({}) == []
+    assert renderer.extract_col_widths({"attributes": {}}) == []
+    assert renderer.extract_col_widths({"attributes": {"cols": ""}}) == []
