@@ -52,6 +52,61 @@ def test_real_table_rendering_xhtml():
     assert "Beta" in output
 
 
+def test_real_table_cols_proportions_html5_and_xhtml():
+    """Test real AsciiDoc table relative column proportions colgroup in HTML5 and XHTML."""
+    doc = """
+[cols="1,3,1", options="header"]
+|===
+|Header A |Header B |Header C
+
+|Cell 1 |Cell 2 |Cell 3
+|===
+"""
+    asg = resolve_adoc(doc)
+    for fmt in ("html5", "xhtml"):
+        renderer = AsciiDoctypeRenderer(target_format=fmt)
+        output = renderer.render(asg)
+
+        assert '<table class="tableblock">' in output
+        assert "<colgroup>" in output
+        assert '<col style="width: 20%;" />' in output or '<col style="width: 20%;">' in output
+        assert '<col style="width: 60%;" />' in output or '<col style="width: 60%;">' in output
+        assert "<thead>" in output
+        assert "<th>Header A</th>" in output
+        assert "<th>Header B</th>" in output
+        assert "<th>Header C</th>" in output
+        assert "<tbody>" in output
+        assert "Cell 1" in output
+        assert "Cell 2" in output
+        assert "Cell 3" in output
+
+
+def test_real_table_cols_percentages_html5_and_xhtml():
+    """Test real AsciiDoc table percentage column widths colgroup in HTML5 and XHTML."""
+    doc = """
+[cols="20%,80%"]
+|===
+|Col 1 |Col 2
+
+|Data 1 |Data 2
+|===
+"""
+    asg = resolve_adoc(doc)
+    for fmt in ("html5", "xhtml"):
+        renderer = AsciiDoctypeRenderer(target_format=fmt)
+        output = renderer.render(asg)
+
+        assert '<table class="tableblock">' in output
+        assert "<colgroup>" in output
+        assert '<col style="width: 20%;" />' in output or '<col style="width: 20%;">' in output
+        assert '<col style="width: 80%;" />' in output or '<col style="width: 80%;">' in output
+        assert "<tbody>" in output
+        assert "Col 1" in output
+        assert "Col 2" in output
+        assert "Data 1" in output
+        assert "Data 2" in output
+
+
 def test_real_button_macro_html5():
     """Test button macro btn:[Save] rendering actual button label text."""
     doc = "Click btn:[Save] to finish."

@@ -15,6 +15,10 @@ Versioning follows https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
 * Updated `asciidoctrine` dependency constraint to `>=0.2.0a4`.
 
+=== Fixed
+
+* Fixed table column proportions (`[cols="..."]`) to emit proportional `<colgroup>` with `<col style="width: ...;">` and semantic cell alignment classes (`halign-*`, `valign-*`) in HTML5 and XHTML templates (Issue #3).
+
 == [0.1.0a3] — 2026-08-22
 
 === Added
