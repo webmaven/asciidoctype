@@ -11,7 +11,7 @@ from .exceptions import (
 )
 from .renderer import AsciiDoctypeRenderer, HighlighterCallable
 
-__version__ = "0.1.0a3"
+__version__ = "0.1.0a4"
 
 
 __all__ = [
