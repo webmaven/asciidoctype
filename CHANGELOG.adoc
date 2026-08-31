@@ -9,6 +9,19 @@ All notable changes to AsciiDoctype are documented in this file.
 The format follows https://keepachangelog.com/en/1.0.0/[Keep a Changelog].
 Versioning follows https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
+== [Unreleased]
+
+=== Changed
+
+* Updated `asciidoctrine` dependency constraint to `>=0.2.0a5`.
+* Optimized `AsciiDoctypeRenderer` template candidate resolution with per-instance template caching (`_template_cache`) and module-level precompiled regexes for table column parsing.
+
+=== Fixed
+
+* Fixed duplicate footnote definitions and container rendering in the showcase gallery by removing redundant manual ASG passthrough injection in `generate_gallery.py` (Issue #4).
+* Replaced deprecated legacy `--` open block delimiter with standard `~~~~` tilde delimiter in tests to eliminate deprecation warnings.
+* Fixed table column proportions (`[cols="..."]`) to emit proportional `<colgroup>` with `<col style="width: ...;">` and semantic cell alignment classes (`halign-*`, `valign-*`) in HTML5 and XHTML templates (Issue #3).
+
 == [0.1.0a4] — 2026-08-25
 
 === Changed

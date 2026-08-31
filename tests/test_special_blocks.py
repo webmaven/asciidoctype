@@ -8,9 +8,9 @@ from asciidoctype import AsciiDoctypeRenderer
 
 def test_render_special_blocks_html5():
     text = """
---
+~~~~
 Open block content
---
+~~~~
 
 [pass]
 ++++

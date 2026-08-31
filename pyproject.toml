@@ -26,7 +26,7 @@ classifiers = [
 ]
 dependencies = [
     "chameleon>=4.0.0",
-    "asciidoctrine>=0.2.0a4",
+    "asciidoctrine>=0.2.0a5",
     "latex2mathml>=3.77.0",
 ]
 
@@ -72,6 +72,6 @@ warn_unused_configs = true
 files = ["src/asciidoctype"]
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
+pythonpath = [".", "src"]
 testpaths = ["tests"]
 norecursedirs = [".*", "build", "dist", "{arch}", "*.egg", ".venv", "venv"]

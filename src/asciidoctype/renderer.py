@@ -13,9 +13,9 @@ into HTML5 or XHTML representations via Chameleon ZPT templates.
 
 import re
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
-from chameleon import PageTemplateLoader
+from chameleon import PageTemplate, PageTemplateLoader
 
 from .exceptions import AsciiDoctypeRenderingError, AsciiDoctypeSecurityError
 from .linter import audit_search_paths
@@ -23,6 +23,10 @@ from .linter import audit_search_paths
 DANGEROUS_URI_SCHEMES = ("javascript:", "vbscript:", "data:text/html")
 
 HighlighterCallable = Callable[[str, str], Optional[str]]
+
+_RE_COLS_SPLIT = re.compile(r"[,;]")
+_RE_MULT_COL = re.compile(r"^(\d+)\*(.*)$")
+_RE_NUM_COL = re.compile(r"(\d+(?:\.\d+)?)")
 
 
 class AsciiDoctypeRenderer:
@@ -104,6 +108,7 @@ class AsciiDoctypeRenderer:
             [str(p) for p in self.search_paths],
             default_extension=".html",
         )
+        self._template_cache: Dict[Tuple[str, Optional[str], Optional[str]], PageTemplate] = {}
 
     def extract_text(self, node: Any) -> str:
         """Extract plain text representation from an ASG node or its inline hierarchy.
@@ -177,21 +182,21 @@ class AsciiDoctypeRenderer:
         if not cols_str:
             return []
 
-        parts = [p.strip() for p in re.split(r"[,;]", cols_str) if p.strip()]
+        parts = [p.strip() for p in _RE_COLS_SPLIT.split(cols_str) if p.strip()]
         if not parts:
             return []
 
         raw_parts: List[float] = []
         for part in parts:
-            mult_match = re.match(r"^(\d+)\*(.*)$", part)
+            mult_match = _RE_MULT_COL.match(part)
             if mult_match:
                 count = int(mult_match.group(1))
                 rest = mult_match.group(2).strip()
-                num_match = re.search(r"(\d+(?:\.\d+)?)", rest)
+                num_match = _RE_NUM_COL.search(rest)
                 w = float(num_match.group(1)) if num_match else 1.0
                 raw_parts.extend([w] * count)
             else:
-                num_match = re.search(r"(\d+(?:\.\d+)?)", part)
+                num_match = _RE_NUM_COL.search(part)
                 w = float(num_match.group(1)) if num_match else 1.0
                 raw_parts.append(w)
 
@@ -289,33 +294,43 @@ class AsciiDoctypeRenderer:
                     effective_node["src"] = ""
 
         node_name = effective_node["name"]
-
-        candidates: List[str]
-        if effective_node.get("name") == "image" and effective_node.get("type") == "inline":
-            candidates = ["image_inline.html", "image.html"]
-        elif effective_node.get("name") == "ref" and effective_node.get("variant") == "footnote":
-            candidates = ["footnote.html", "ref.html"]
-        elif effective_node.get("name") == "source":
-            candidates = ["source.html", "listing.html"]
-        else:
-            candidates = [f"{node_name}.html"]
+        node_type = effective_node.get("type")
+        node_variant = effective_node.get("variant")
+        cache_key = (
+            str(node_name),
+            str(node_type) if node_type is not None else None,
+            str(node_variant) if node_variant is not None else None,
+        )
 
         try:
-            template = None
-            for candidate in candidates:
-                try:
-                    template = self.loader[candidate]
-                    break
-                except ValueError:
-                    continue
-
+            template = self._template_cache.get(cache_key)
             if template is None:
-                if self.strict:
-                    raise AsciiDoctypeRenderingError(
-                        f"Strict mode violation: unknown ASG node type '{node_name}' "
-                        f"has no registered template."
-                    )
-                template = self.loader["fallback_container.html"]
+                candidates: List[str]
+                if node_name == "image" and node_type == "inline":
+                    candidates = ["image_inline.html", "image.html"]
+                elif node_name == "ref" and node_variant == "footnote":
+                    candidates = ["footnote.html", "ref.html"]
+                elif node_name == "source":
+                    candidates = ["source.html", "listing.html"]
+                else:
+                    candidates = [f"{node_name}.html"]
+
+                for candidate in candidates:
+                    try:
+                        template = self.loader[candidate]
+                        break
+                    except ValueError:
+                        continue
+
+                if template is None:
+                    if self.strict:
+                        raise AsciiDoctypeRenderingError(
+                            f"Strict mode violation: unknown ASG node type '{node_name}' "
+                            f"has no registered template."
+                        )
+                    template = self.loader["fallback_container.html"]
+
+                self._template_cache[cache_key] = template
 
             res: str = template(node=effective_node, renderer=self, ctx=ctx)
             return res

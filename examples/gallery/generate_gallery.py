@@ -354,29 +354,7 @@ def _enrich_asg(
     asg: Dict[str, Any],
 ) -> None:
     """Apply gallery-specific ASG enrichments in-place."""
-    node_type = s["node_type"]
-
-    if node_type == "ref (footnote)":
-        # Format the document-level footnote bibliography block for display in the gallery
-        fn_defs_html = (
-            '<div id="footnotes" class="footnotes-defs">\n'
-            '  <div class="footnote" id="_footnotedef_1">\n'
-            '    <a href="#_footnote_1" class="fn-backref">1</a>. '
-            "Validated against AsciiDoctrine test suites.\n"
-            "  </div>\n"
-            '  <div class="footnote" id="_footnotedef_2">\n'
-            '    <a href="#_footnote_2" class="fn-backref">2</a>. '
-            "Specifically XHTML 1.0 Strict.\n"
-            "  </div>\n"
-            "</div>"
-        )
-        asg["blocks"].append(
-            {
-                "name": "passthrough",
-                "type": "block",
-                "value": fn_defs_html,
-            }
-        )
+    pass
 
 
 def generate_gallery_html(target_format: str = "html5") -> str:
