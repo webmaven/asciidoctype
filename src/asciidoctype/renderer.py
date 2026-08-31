@@ -13,7 +13,7 @@ into HTML5 or XHTML representations via Chameleon ZPT templates.
 
 import re
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Set, Tuple, Union
 
 from chameleon import PageTemplate, PageTemplateLoader
 
@@ -21,6 +21,8 @@ from .exceptions import AsciiDoctypeRenderingError, AsciiDoctypeSecurityError
 from .linter import audit_search_paths
 
 DANGEROUS_URI_SCHEMES = ("javascript:", "vbscript:", "data:text/html")
+
+TargetFormat = Literal["html5", "xhtml"]
 
 HighlighterCallable = Callable[[str, str], Optional[str]]
 
@@ -54,8 +56,8 @@ class AsciiDoctypeRenderer:
 
     def __init__(
         self,
-        target_format: str = "html5",
-        search_paths: Optional[List[Path]] = None,
+        target_format: Union[TargetFormat, str] = "html5",
+        search_paths: Optional[Sequence[Union[str, Path]]] = None,
         strict: bool = False,
         validate_templates: bool = True,
         max_depth: int = 500,
@@ -67,8 +69,9 @@ class AsciiDoctypeRenderer:
 
         `target_format` (str):: Output markup format specification (`"html5"` or `"xhtml"`).
                                 Defaults to `"html5"`.
-        `search_paths` (list[Path], optional):: Additional directory paths to search for custom
-                                                template overrides prior to core fallback templates.
+        `search_paths` (sequence[str | Path], optional):: Additional directory paths to search for
+                                                          custom template overrides prior to core
+                                                          fallback templates.
         `strict` (bool, optional):: If `True`, enforces strict node validation, raises security
                                     errors on unsafe templates and dangerous URIs, and disallows
                                     fallback container routing. Defaults to `False`.
@@ -88,7 +91,7 @@ class AsciiDoctypeRenderer:
 
         self.target_format = target_format.lower()
         if self.target_format not in ("html5", "xhtml"):
-            raise ValueError("Target target_format must be 'html5' or 'xhtml'")
+            raise ValueError("target_format must be 'html5' or 'xhtml'")
 
         self.strict = strict
         self.max_depth = max_depth
@@ -97,7 +100,7 @@ class AsciiDoctypeRenderer:
         base_dir = Path(__file__).parent.resolve()
         core_fallback = base_dir / "core_templates" / self.target_format
 
-        custom_paths: List[Path] = list(search_paths) if search_paths else []
+        custom_paths: List[Path] = [Path(p) for p in search_paths] if search_paths else []
 
         if validate_templates and custom_paths:
             audit_search_paths(custom_paths, strict=self.strict)
@@ -342,3 +345,53 @@ class AsciiDoctypeRenderer:
                 f"Critical rendering failure processing structural node entity: '{node_id}' "
                 f"Target Specification Pipeline: [{self.target_format}]. Base Error: {err!s}"
             ) from err
+
+
+def render(
+    node: Dict[str, Any],
+    target_format: Union[TargetFormat, str] = "html5",
+    search_paths: Optional[Sequence[Union[str, Path]]] = None,
+    strict: bool = False,
+    validate_templates: bool = True,
+    max_depth: int = 500,
+    highlighter: Optional[HighlighterCallable] = None,
+    context: Optional[Dict[str, Any]] = None,
+) -> str:
+    """Convenience function to render an ASG node into HTML5 or XHTML.
+
+    *Parameters:*
+
+    `node` (dict[str, Any]):: The ASG node dictionary to render.
+    `target_format` (str):: Output markup format (`"html5"` or `"xhtml"`). Defaults to `"html5"`.
+    `search_paths` (sequence[str | Path], optional):: Additional directory paths to search for
+                                                      custom templates. Defaults to `None`.
+    `strict` (bool, optional):: If `True`, enforces strict validation. Defaults to `False`.
+    `validate_templates` (bool, optional):: Whether to audit custom search paths.
+                                            Defaults to `True`.
+    `max_depth` (int, optional):: Maximum recursive rendering depth. Defaults to `500`.
+    `highlighter` (HighlighterCallable, optional):: Syntax highlighting callable.
+                                                    Defaults to `None`.
+    `context` (dict[str, Any], optional):: Context variables dictionary. Defaults to `None`.
+
+    *Returns:*
+
+    `str`:: Rendered HTML5 or XHTML string output.
+
+    *Example:*
+
+    [source,python]
+    ----
+    import asciidoctype
+
+    html = asciidoctype.render(asg_node, target_format="html5")
+    ----
+    """
+    renderer = AsciiDoctypeRenderer(
+        target_format=target_format,
+        search_paths=search_paths,
+        strict=strict,
+        validate_templates=validate_templates,
+        max_depth=max_depth,
+        highlighter=highlighter,
+    )
+    return renderer.render(node, context=context)

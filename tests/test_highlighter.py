@@ -51,7 +51,8 @@ def test_renderer_extract_text():
     }
     assert renderer.extract_text(node_nested) == "echo done"
 
-    # Empty / non-dict node
+    # Empty / non-dict / string node
+    assert renderer.extract_text("direct string") == "direct string"
     assert renderer.extract_text({}) == ""
     assert renderer.extract_text(None) == ""
 

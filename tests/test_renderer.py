@@ -38,8 +38,32 @@ def test_renderer_initialization_default():
 
 def test_renderer_initialization_invalid_format():
     """Test ValueError is raised when initialized with an invalid format like markdown."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="target_format must be 'html5' or 'xhtml'"):
         AsciiDoctypeRenderer(target_format="markdown")
+
+
+def test_renderer_search_paths_string_conversion(tmp_path):
+    """Test search_paths accepts string representations of paths."""
+    custom_dir = tmp_path / "custom"
+    custom_dir.mkdir()
+    renderer = AsciiDoctypeRenderer(search_paths=[str(custom_dir)])
+    assert any(p == custom_dir for p in renderer.search_paths)
+
+
+def test_top_level_render_function():
+    """Test top-level render() convenience function renders ASG node properly."""
+    from asciidoctype import render
+
+    node = {
+        "name": "paragraph",
+        "type": "block",
+        "inlines": [{"name": "text", "value": "Convenience function rendering"}],
+    }
+    output_html5 = render(node, target_format="html5")
+    assert "<p>Convenience function rendering</p>" in output_html5
+
+    output_xhtml = render(node, target_format="xhtml")
+    assert "<p>Convenience function rendering</p>" in output_xhtml
 
 
 def test_render_polymorphic_image_inline():

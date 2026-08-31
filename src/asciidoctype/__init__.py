@@ -9,7 +9,8 @@ from .exceptions import (
     AsciiDoctypeSecurityError,
     AsciiDoctypeSecurityWarning,
 )
-from .renderer import AsciiDoctypeRenderer, HighlighterCallable
+from .linter import TemplateFinding, audit_search_paths, audit_template
+from .renderer import AsciiDoctypeRenderer, HighlighterCallable, TargetFormat, render
 
 __version__ = "0.1.0a4"
 
@@ -20,4 +21,9 @@ __all__ = [
     "AsciiDoctypeSecurityError",
     "AsciiDoctypeSecurityWarning",
     "HighlighterCallable",
+    "TargetFormat",
+    "TemplateFinding",
+    "audit_search_paths",
+    "audit_template",
+    "render",
 ]

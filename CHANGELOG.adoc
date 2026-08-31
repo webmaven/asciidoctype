@@ -11,6 +11,12 @@ Versioning follows https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
 == [Unreleased]
 
+=== Added
+
+* Top-level `asciidoctype.render()` convenience function for direct rendering of ASG nodes into HTML5 or XHTML without explicit renderer lifecycle management.
+* Exported `TargetFormat` (`Literal["html5", "xhtml"]`), `TemplateFinding`, `audit_search_paths`, and `audit_template` in public package API `asciidoctype`.
+* Enhanced `AsciiDoctypeRenderer` to accept both string and `Path` directory paths for `search_paths` (`Sequence[Union[str, Path]]`).
+
 === Changed
 
 * Updated `asciidoctrine` dependency constraint to `>=0.2.0a5`.

@@ -176,6 +176,19 @@ def test_render_table_no_colgroup():
 def test_extract_col_widths():
     renderer = AsciiDoctypeRenderer()
 
+    # Non-dict node
+    assert renderer.extract_col_widths("invalid") == []
+
+    # Structured columns with invalid percentage string and float widths
+    assert renderer.extract_col_widths({"columns": [{"width": "invalid%"}, {"width": 2.5}]}) == [
+        "28.5714%",
+        "71.4286%",
+    ]
+    assert renderer.extract_col_widths({"columns": [{"width": "bad"}]}) == []
+    assert renderer.extract_col_widths({"columns": "not-a-list"}) == []
+    assert renderer.extract_col_widths({"attributes": {"cols": ", , "}}) == []
+    assert renderer.extract_col_widths({"attributes": {"cols": "0,0"}}) == []
+
     # Proportions: 1 + 3 + 1 = 5
     assert renderer.extract_col_widths({"attributes": {"cols": "1,3,1"}}) == ["20%", "60%", "20%"]
 
