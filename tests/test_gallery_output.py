@@ -63,3 +63,24 @@ def test_footnote_sample_render_output(target_format: str) -> None:
     assert rendered.count('<div id="footnotes"') == 1
     assert rendered.count('id="_footnotedef_1"') == 1
     assert rendered.count('id="_footnotedef_2"') == 1
+
+
+@pytest.mark.parametrize("target_format", ["html5", "xhtml"])
+def test_sample_13_ordered_list_integrity(target_format: str) -> None:
+    """Verify that sample 13 (lists) renders a single continuous ordered list with all 4 items."""
+    list_sample = next(s for s in SHOWCASE_SAMPLES if s.get("node_type") == "list & listItem")
+    from asciidoctrine.lark_parser import parse_to_ast
+    from asciidoctrine.resolver import ASGResolver, WorkspaceCatalog
+
+    catalog = WorkspaceCatalog()
+    renderer = AsciiDoctypeRenderer(target_format=target_format)
+    ast = parse_to_ast(list_sample["asciidoc"])
+    resolver = ASGResolver(catalog, "test_list_sample.adoc")
+    asg = resolver.resolve(ast)
+
+    rendered = renderer.render(asg)
+    assert rendered.count('<ol class="olist">') == 1
+    assert rendered.count("<li>Parse document source into AST</li>") == 1
+    assert rendered.count("<li>Resolve AST references into ASG</li>") == 1
+    assert rendered.count("<li>Dispatch ASG nodes to Chameleon templates</li>") == 1
+    assert rendered.count("<li>Emit valid HTML5 or XHTML</li>") == 1

@@ -254,10 +254,10 @@ SHOWCASE_SAMPLES: List[Dict[str, Any]] = [
             "** Embedded Chameleon ZPT Engine\n"
             "** LaTeX to MathML Native Converter\n"
             "* Type Checked & Strictly Linted\n\n"
-            ". Parse document source into AST\n"
-            ". Resolve AST references into ASG\n"
-            ". Dispatch ASG nodes to Chameleon templates\n"
-            ". Emit valid HTML5 or XHTML"
+            "1. Parse document source into AST\n"
+            "2. Resolve AST references into ASG\n"
+            "3. Dispatch ASG nodes to Chameleon templates\n"
+            "4. Emit valid HTML5 or XHTML"
         ),
     },
     {

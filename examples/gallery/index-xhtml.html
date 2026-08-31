@@ -4891,9 +4891,10 @@ Content on the following page (after page break).</code></pre>
 </li>
 <li>Type Checked &amp; Strictly Linted</li>
 </ul>
-<ol class="olist"><li>Resolve AST references into ASG</li>
-</ol>
-<ol class="olist"><li>Emit valid HTML5 or XHTML</li>
+<ol class="olist"><li>Parse document source into AST</li>
+<li>Resolve AST references into ASG</li>
+<li>Dispatch ASG nodes to Chameleon templates</li>
+<li>Emit valid HTML5 or XHTML</li>
 </ol>
 
     </div>
@@ -4912,10 +4913,10 @@ Content on the following page (after page break).</code></pre>
 ** LaTeX to MathML Native Converter
 * Type Checked &amp; Strictly Linted
 
-. Parse document source into AST
-. Resolve AST references into ASG
-. Dispatch ASG nodes to Chameleon templates
-. Emit valid HTML5 or XHTML</code></pre>
+1. Parse document source into AST
+2. Resolve AST references into ASG
+3. Dispatch ASG nodes to Chameleon templates
+4. Emit valid HTML5 or XHTML</code></pre>
                     </div>
                     <div class="tab-panel panel-asg">
                         <pre class="code-block language-json"><code>{
@@ -4928,7 +4929,7 @@ Content on the following page (after page break).</code></pre>
     },
     {
       &quot;line&quot;: 10,
-      &quot;col&quot;: 27
+      &quot;col&quot;: 28
     }
   ],
   &quot;blocks&quot;: [
@@ -5140,16 +5141,49 @@ Content on the following page (after page break).</code></pre>
       &quot;location&quot;: [
         {
           &quot;line&quot;: 7,
-          &quot;col&quot;: 2
+          &quot;col&quot;: 1
         },
         {
-          &quot;line&quot;: 8,
-          &quot;col&quot;: 33
+          &quot;line&quot;: 10,
+          &quot;col&quot;: 28
         }
       ],
       &quot;variant&quot;: &quot;ordered&quot;,
-      &quot;marker&quot;: &quot;.&quot;,
+      &quot;marker&quot;: &quot;1.&quot;,
       &quot;items&quot;: [
+        {
+          &quot;name&quot;: &quot;listItem&quot;,
+          &quot;type&quot;: &quot;block&quot;,
+          &quot;location&quot;: [
+            {
+              &quot;line&quot;: 7,
+              &quot;col&quot;: 1
+            },
+            {
+              &quot;line&quot;: 7,
+              &quot;col&quot;: 33
+            }
+          ],
+          &quot;marker&quot;: &quot;1.&quot;,
+          &quot;principal&quot;: [
+            {
+              &quot;name&quot;: &quot;text&quot;,
+              &quot;type&quot;: &quot;string&quot;,
+              &quot;location&quot;: [
+                {
+                  &quot;line&quot;: 7,
+                  &quot;col&quot;: 4
+                },
+                {
+                  &quot;line&quot;: 7,
+                  &quot;col&quot;: 33
+                }
+              ],
+              &quot;value&quot;: &quot;Parse document source into AST&quot;
+            }
+          ],
+          &quot;blocks&quot;: []
+        },
         {
           &quot;name&quot;: &quot;listItem&quot;,
           &quot;type&quot;: &quot;block&quot;,
@@ -5159,11 +5193,11 @@ Content on the following page (after page break).</code></pre>
               &quot;col&quot;: 1
             },
             {
-              &quot;line&quot;: 8,
-              &quot;col&quot;: 33
+              &quot;line&quot;: 10,
+              &quot;col&quot;: 28
             }
           ],
-          &quot;marker&quot;: &quot;.&quot;,
+          &quot;marker&quot;: &quot;2.&quot;,
           &quot;principal&quot;: [
             {
               &quot;name&quot;: &quot;text&quot;,
@@ -5171,53 +5205,51 @@ Content on the following page (after page break).</code></pre>
               &quot;location&quot;: [
                 {
                   &quot;line&quot;: 8,
-                  &quot;col&quot;: 3
+                  &quot;col&quot;: 4
                 },
                 {
                   &quot;line&quot;: 8,
-                  &quot;col&quot;: 33
+                  &quot;col&quot;: 34
                 }
               ],
               &quot;value&quot;: &quot;Resolve AST references into ASG&quot;
             }
           ],
           &quot;blocks&quot;: []
-        }
-      ],
-      &quot;title&quot;: [
-        {
-          &quot;name&quot;: &quot;text&quot;,
-          &quot;type&quot;: &quot;string&quot;,
-          &quot;location&quot;: [
-            {
-              &quot;line&quot;: 7,
-              &quot;col&quot;: 2
-            },
-            {
-              &quot;line&quot;: 7,
-              &quot;col&quot;: 32
-            }
-          ],
-          &quot;value&quot;: &quot; Parse document source into AST&quot;
-        }
-      ]
-    },
-    {
-      &quot;name&quot;: &quot;list&quot;,
-      &quot;type&quot;: &quot;block&quot;,
-      &quot;location&quot;: [
-        {
-          &quot;line&quot;: 9,
-          &quot;col&quot;: 2
         },
         {
-          &quot;line&quot;: 10,
-          &quot;col&quot;: 27
-        }
-      ],
-      &quot;variant&quot;: &quot;ordered&quot;,
-      &quot;marker&quot;: &quot;.&quot;,
-      &quot;items&quot;: [
+          &quot;name&quot;: &quot;listItem&quot;,
+          &quot;type&quot;: &quot;block&quot;,
+          &quot;location&quot;: [
+            {
+              &quot;line&quot;: 9,
+              &quot;col&quot;: 1
+            },
+            {
+              &quot;line&quot;: 9,
+              &quot;col&quot;: 44
+            }
+          ],
+          &quot;marker&quot;: &quot;3.&quot;,
+          &quot;principal&quot;: [
+            {
+              &quot;name&quot;: &quot;text&quot;,
+              &quot;type&quot;: &quot;string&quot;,
+              &quot;location&quot;: [
+                {
+                  &quot;line&quot;: 9,
+                  &quot;col&quot;: 4
+                },
+                {
+                  &quot;line&quot;: 9,
+                  &quot;col&quot;: 44
+                }
+              ],
+              &quot;value&quot;: &quot;Dispatch ASG nodes to Chameleon templates&quot;
+            }
+          ],
+          &quot;blocks&quot;: []
+        },
         {
           &quot;name&quot;: &quot;listItem&quot;,
           &quot;type&quot;: &quot;block&quot;,
@@ -5228,10 +5260,10 @@ Content on the following page (after page break).</code></pre>
             },
             {
               &quot;line&quot;: 10,
-              &quot;col&quot;: 27
+              &quot;col&quot;: 28
             }
           ],
-          &quot;marker&quot;: &quot;.&quot;,
+          &quot;marker&quot;: &quot;4.&quot;,
           &quot;principal&quot;: [
             {
               &quot;name&quot;: &quot;text&quot;,
@@ -5239,34 +5271,17 @@ Content on the following page (after page break).</code></pre>
               &quot;location&quot;: [
                 {
                   &quot;line&quot;: 10,
-                  &quot;col&quot;: 3
+                  &quot;col&quot;: 4
                 },
                 {
                   &quot;line&quot;: 10,
-                  &quot;col&quot;: 27
+                  &quot;col&quot;: 28
                 }
               ],
               &quot;value&quot;: &quot;Emit valid HTML5 or XHTML&quot;
             }
           ],
           &quot;blocks&quot;: []
-        }
-      ],
-      &quot;title&quot;: [
-        {
-          &quot;name&quot;: &quot;text&quot;,
-          &quot;type&quot;: &quot;string&quot;,
-          &quot;location&quot;: [
-            {
-              &quot;line&quot;: 9,
-              &quot;col&quot;: 2
-            },
-            {
-              &quot;line&quot;: 9,
-              &quot;col&quot;: 43
-            }
-          ],
-          &quot;value&quot;: &quot; Dispatch ASG nodes to Chameleon templates&quot;
         }
       ]
     }
@@ -5291,9 +5306,10 @@ Content on the following page (after page break).</code></pre>
 &lt;/li&gt;
 &lt;li&gt;Type Checked &amp;amp; Strictly Linted&lt;/li&gt;
 &lt;/ul&gt;
-&lt;ol class=&quot;olist&quot;&gt;&lt;li&gt;Resolve AST references into ASG&lt;/li&gt;
-&lt;/ol&gt;
-&lt;ol class=&quot;olist&quot;&gt;&lt;li&gt;Emit valid HTML5 or XHTML&lt;/li&gt;
+&lt;ol class=&quot;olist&quot;&gt;&lt;li&gt;Parse document source into AST&lt;/li&gt;
+&lt;li&gt;Resolve AST references into ASG&lt;/li&gt;
+&lt;li&gt;Dispatch ASG nodes to Chameleon templates&lt;/li&gt;
+&lt;li&gt;Emit valid HTML5 or XHTML&lt;/li&gt;
 &lt;/ol&gt;
 
     &lt;/div&gt;
