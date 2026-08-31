@@ -10,7 +10,7 @@ image:https://img.shields.io/badge/License-Apache%202.0-blue.svg[Apache 2.0 Lice
 image:https://img.shields.io/badge/python-%3E%3D3.10-green[Python 3.10+]
 image:https://img.shields.io/badge/chameleon-%3E%3D4.0-orange[Chameleon 4.0+]
 image:https://img.shields.io/badge/latex2mathml-%3E%3D3.77-purple[latex2mathml 3.77+]
-image:https://img.shields.io/badge/asciidoctrine-%3E%3D0.2.0a4-blue[AsciiDoctrine 0.2.0a4+]
+image:https://img.shields.io/badge/asciidoctrine-%3E%3D0.2.0a5-blue[AsciiDoctrine 0.2.0a5+]
 image:https://img.shields.io/pypi/v/asciidoctype.svg[PyPI, link=https://pypi.org/project/asciidoctype/]
 
 
@@ -83,11 +83,11 @@ pip install -e .[test]
 
 === Minimal Usage
 
+You can use the direct `render()` convenience function:
+
 [source,python]
 ----
-from asciidoctype import AsciiDoctypeRenderer
-
-renderer = AsciiDoctypeRenderer(target_format="html5")
+import asciidoctype
 
 # An ASG node dictionary as produced by AsciiDoctrine's to_dict()
 node = {
@@ -106,7 +106,7 @@ node = {
     ],
 }
 
-html = renderer.render(node)
+html = asciidoctype.render(node, target_format="html5")
 # → '<p>Hello, <strong>world</strong>!</p>'
 ----
 
@@ -187,6 +187,24 @@ XHTML mode produces:
 
 == API Reference
 
+=== `asciidoctype.render`
+
+[source,python]
+----
+def render(
+    node: Dict[str, Any],
+    target_format: TargetFormat | str = "html5",
+    search_paths: Optional[Sequence[str | Path]] = None,
+    strict: bool = False,
+    validate_templates: bool = True,
+    max_depth: int = 500,
+    highlighter: Optional[HighlighterCallable] = None,
+    context: Optional[Dict[str, Any]] = None,
+) -> str: ...
+----
+
+Convenience shortcut that instantiates an `AsciiDoctypeRenderer` and renders an ASG node in a single call.
+
 === `AsciiDoctypeRenderer`
 
 [source,python]
@@ -194,11 +212,12 @@ XHTML mode produces:
 class AsciiDoctypeRenderer:
     def __init__(
         self,
-        target_format: str = "html5",
-        search_paths: Optional[List[Path]] = None,
+        target_format: TargetFormat | str = "html5",
+        search_paths: Optional[Sequence[str | Path]] = None,
         strict: bool = False,
         validate_templates: bool = True,
         max_depth: int = 500,
+        highlighter: Optional[HighlighterCallable] = None,
     ) -> None: ...
 
     def render(
@@ -212,8 +231,8 @@ class AsciiDoctypeRenderer:
   `"html5"` (default) or `"xhtml"`. Raises `ValueError` for any other value.
 
 `search_paths`::
-  Ordered list of `Path` objects for template override directories. The bundled
-  core templates are always appended last as the final fallback.
+  Ordered sequence of directory paths (`str` or `pathlib.Path`) for custom template overrides.
+  The bundled core templates are always appended last as the final fallback.
 
 `strict`::
   `bool` (default `False`). When `True`, enforces fail-fast validation: rejects
@@ -227,6 +246,10 @@ class AsciiDoctypeRenderer:
 `max_depth`::
   `int` (default `500`). Maximum recursion depth protection against circular or
   maliciously deep ASG trees.
+
+`highlighter`::
+  `HighlighterCallable` (`Callable[[str, str], Optional[str]]`, default `None`). Optional
+  server-side syntax highlighting callable receiving `(code, language)` (e.g. Pygments).
 
 `render(node, context=None)`::
   Recursively renders an ASG node dictionary and returns a markup string.

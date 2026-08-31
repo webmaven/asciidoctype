@@ -47,24 +47,35 @@ pure in-memory transformation — dict in, string out.
 
 == 2. Core Components
 
-=== 2.1 `AsciiDoctypeRenderer`
+=== 2.1 `AsciiDoctypeRenderer` and `asciidoctype.render`
 
-The single public class. Constructed once per rendering session (or once per
-target format) and reused across many `render()` calls.
+`AsciiDoctypeRenderer` is the primary rendering orchestrator. It is constructed once
+per rendering session (or once per target format) and reused across many `render()` calls.
+
+For one-off renders, `asciidoctype.render(node, target_format="html5")` provides a
+top-level functional shortcut.
 
 [source,python]
 ----
-renderer = AsciiDoctypeRenderer(
-    target_format="html5",        # or "xhtml"
-    search_paths=[Path("theme/")], # optional, ordered
+import asciidoctype
+
+# Top-level functional shortcut
+html = asciidoctype.render(node, target_format="html5")
+
+# Class orchestrator
+renderer = asciidoctype.AsciiDoctypeRenderer(
+    target_format="html5",         # or "xhtml"
+    search_paths=["theme/"],       # optional, ordered str or Path objects
+    highlighter=my_highlighter,    # optional Callable[[str, str], Optional[str]]
 )
 ----
 
 **Responsibilities:**
 
 * Validate `target_format` and raise `ValueError` on bad values.
-* Build the ordered search path list, appending the bundled core fallback last.
+* Build the ordered search path list, normalizing `str` and `Path` entries and appending the bundled core fallback last.
 * Initialise a `chameleon.PageTemplateLoader` over the resolved paths.
+* Memoize candidate template resolution in `_template_cache` for sub-millisecond node dispatch.
 * Dispatch each incoming ASG node dict to the correct template via `render()`.
 * Wrap any template runtime error in `AsciiDoctypeRenderingError` for clean
   diagnostics.
@@ -75,11 +86,12 @@ A typed sentinel exception that carries the failing node name, the target
 pipeline, and the root cause. Callers can catch this to implement graceful
 degradation without catching every possible Python exception.
 
-=== 2.3 Chameleon `PageTemplateLoader`
+=== 2.3 Chameleon `PageTemplateLoader` & Dispatch Caching
 
 Manages the compiled-bytecode template cache. Templates are compiled to Python
-bytecode on first use; subsequent calls reuse the cache. This gives near-native
-rendering speed even for large, deeply-nested documents.
+bytecode on first use; subsequent calls reuse the cache. In addition, `AsciiDoctypeRenderer`
+memoizes resolved template references in `_template_cache` keyed on `(node_name, type, variant)`,
+giving ultra-fast rendering throughput even on deeply nested documents.
 
 === 2.4 MathML Conversion (`latex2mathml`)
 
@@ -87,6 +99,11 @@ AsciiDoctype relies on `latex2mathml` as a runtime dependency. The `stem` and
 `passthrough` (with `latexmath` style) templates use `latex2mathml` at render
 time to convert LaTeX equations into native MathML markup, eliminating the need
 for client-side JavaScript rendering engines like MathJax or KaTeX.
+
+=== 2.5 Template Security Auditing (`asciidoctype.linter`)
+
+Static analysis utilities (`audit_search_paths`, `audit_template`, and `TemplateFinding`)
+audit custom template override directories for syntax errors and unsafe `structure` directives.
 
 == 3. Template Resolution Pipeline
 
