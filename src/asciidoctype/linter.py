@@ -29,8 +29,7 @@ SAFE_EXPRESSIONS = (
 class TemplateFinding:
     """Represents a diagnostic finding discovered during template static analysis.
 
-    *Attributes:*
-
+    [attributes]
     `template_name` (str):: Filename or identifier of the audited template.
     `line_number` (int):: Line number where the pattern was detected.
     `expression` (str):: The extracted expression argument.
@@ -50,14 +49,12 @@ def lint_template_source(
 ) -> List[TemplateFinding]:
     """Analyze template source code for compilation errors and suspicious directives.
 
-    *Parameters:*
-
+    [parameters]
     `source` (str):: Raw HTML/ZPT template markup string.
     `template_name` (str, optional):: Name of the template being analyzed. Defaults to
                                       `"template.html"`.
 
-    *Returns:*
-
+    [returns]
     `list[TemplateFinding]`:: Ordered list of detected diagnostics.
     """
     findings: List[TemplateFinding] = []
@@ -103,12 +100,10 @@ def lint_template_source(
 def audit_template(template_path: Path) -> List[TemplateFinding]:
     """Audit a template file on the filesystem.
 
-    *Parameters:*
-
+    [parameters]
     `template_path` (Path):: Path to the `.html` template file.
 
-    *Returns:*
-
+    [returns]
     `list[TemplateFinding]`:: Diagnostics found in the template.
     """
     if not template_path.is_file():
@@ -120,13 +115,11 @@ def audit_template(template_path: Path) -> List[TemplateFinding]:
 def audit_template_directory(directory: Path, recursive: bool = True) -> List[TemplateFinding]:
     """Audit all `.html` templates within a given directory.
 
-    *Parameters:*
-
+    [parameters]
     `directory` (Path):: Directory containing template files.
     `recursive` (bool, optional):: Whether to search child subdirectories. Defaults to `True`.
 
-    *Returns:*
-
+    [returns]
     `list[TemplateFinding]`:: Aggregated diagnostics across all discovered templates.
     """
     findings: List[TemplateFinding] = []
@@ -142,17 +135,15 @@ def audit_template_directory(directory: Path, recursive: bool = True) -> List[Te
 def audit_search_paths(search_paths: List[Path], strict: bool = False) -> List[TemplateFinding]:
     """Audit a list of template search paths, emitting warnings or raising security errors.
 
-    *Parameters:*
-
+    [parameters]
     `search_paths` (list[Path]):: List of directories to audit.
     `strict` (bool, optional):: If `True`, raises `AsciiDoctypeSecurityError` on warnings.
+                                Defaults to `False`.
 
-    *Returns:*
-
+    [returns]
     `list[TemplateFinding]`:: All findings recorded across all search paths.
 
-    *Raises:*
-
+    [raises]
     `AsciiDoctypeSecurityError`:: When `strict=True` and one or more findings are detected.
     """
     all_findings: List[TemplateFinding] = []

@@ -8,8 +8,7 @@ used across rendering, template linting, and security audits.
 class AsciiDoctypeRenderingError(Exception):
     """Raised when rendering an ASG node fails or a critical pipeline error occurs.
 
-    *Attributes:*
-
+    [attributes]
     `message` (str):: Detailed explanation of the rendering failure context.
     """
 
@@ -19,8 +18,7 @@ class AsciiDoctypeRenderingError(Exception):
 class AsciiDoctypeSecurityError(AsciiDoctypeRenderingError):
     """Raised when strict security enforcement detects an unsafe template or dangerous URI.
 
-    *Attributes:*
-
+    [attributes]
     `message` (str):: Description of the security violation detected.
     """
 
@@ -30,8 +28,7 @@ class AsciiDoctypeSecurityError(AsciiDoctypeRenderingError):
 class AsciiDoctypeSecurityWarning(UserWarning):
     """Emitted when non-strict template auditing discovers suspicious structure directives.
 
-    *Attributes:*
-
+    [attributes]
     `message` (str):: Context of the potentially unsafe template pattern.
     """
 
