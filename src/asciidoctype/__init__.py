@@ -12,7 +12,7 @@ from .exceptions import (
 from .linter import TemplateFinding, audit_search_paths, audit_template
 from .renderer import AsciiDoctypeRenderer, HighlighterCallable, TargetFormat, render
 
-__version__ = "0.1.0a5"
+__version__ = "0.1.0a6"
 
 
 __all__ = [

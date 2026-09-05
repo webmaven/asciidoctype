@@ -9,11 +9,13 @@ All notable changes to AsciiDoctype are documented in this file.
 The format follows https://keepachangelog.com/en/1.0.0/[Keep a Changelog].
 Versioning follows https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
-== [Unreleased]
+== [0.1.0a6] — 2026-09-05
 
 === Changed
 
 * Updated `asciidoctrine` dependency constraint to `>=0.2.0a7`.
+* Restored standard AsciiDoc dot-ordered list syntax (`. Item`) in showcase gallery following upstream `asciidoctrine` fix for block title vs. dot-list token disambiguation (Issue #122).
+* Added integration test coverage for multiline list item principal text folding and backslash-escaped inline formatting delimiters (`\*`, `\_`, `\``).
 
 == [0.1.0a5] — 2026-08-31
 
