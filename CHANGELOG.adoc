@@ -9,6 +9,12 @@ All notable changes to AsciiDoctype are documented in this file.
 The format follows https://keepachangelog.com/en/1.0.0/[Keep a Changelog].
 Versioning follows https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
+== [Unreleased]
+
+=== Changed
+
+* Updated `asciidoctrine` dependency constraint to `>=0.2.0a7`.
+
 == [0.1.0a5] — 2026-08-31
 
 === Added

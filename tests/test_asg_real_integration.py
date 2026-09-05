@@ -204,3 +204,39 @@ def greet(name: str):
         'def greet(name: str):\n    return f"Hello, {name}"</div>'
     )
     assert expected in html
+
+
+def test_real_multiline_list_items_html5():
+    """Test AsciiDoctrine 0.2.0a7 multiline principal text in list items."""
+    doc = """
+* Primary line of first item
+  continued multiline description on subsequent line
+* Second item
+"""
+    asg = resolve_adoc(doc)
+    renderer = AsciiDoctypeRenderer(target_format="html5")
+    html = renderer.render(asg)
+
+    assert '<ul class="ulist">' in html
+    expected_item = (
+        "<li>Primary line of first item\ncontinued multiline description on subsequent line</li>"
+    )
+    assert expected_item in html
+    assert "<li>Second item</li>" in html
+
+
+def test_real_backslash_escaped_inlines_html5():
+    """Test AsciiDoctrine 0.2.0a7 backslash escaping for inline formatting delimiters."""
+    doc = """
+Here is \\*not bold*, \\_not italic_, and \\`not monospace`.
+"""
+    asg = resolve_adoc(doc)
+    renderer = AsciiDoctypeRenderer(target_format="html5")
+    html = renderer.render(asg)
+
+    assert "<strong>" not in html
+    assert "<em>" not in html
+    assert "<code>" not in html
+    assert "*not bold*" in html
+    assert "_not italic_" in html
+    assert "`not monospace`" in html
