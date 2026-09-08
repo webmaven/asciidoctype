@@ -30,6 +30,13 @@ _RE_COLS_SPLIT = re.compile(r"[,;]")
 _RE_MULT_COL = re.compile(r"^(\d+)\*(.*)$")
 _RE_NUM_COL = re.compile(r"(\d+(?:\.\d+)?)")
 
+_LOADER_CACHE: Dict[Tuple[str, ...], PageTemplateLoader] = {}
+
+
+def clear_loader_cache() -> None:
+    """Clear the shared compiled PageTemplateLoader cache."""
+    _LOADER_CACHE.clear()
+
 
 class AsciiDoctypeRenderer:
     """Renders AsciiDoc ASG nodes into HTML5 or XHTML string fragments.
@@ -102,10 +109,15 @@ class AsciiDoctypeRenderer:
 
         self.search_paths: List[Path] = custom_paths + [core_fallback]
 
-        self.loader = PageTemplateLoader(
-            [str(p) for p in self.search_paths],
-            default_extension=".html",
-        )
+        cache_key = tuple(str(p) for p in self.search_paths)
+        if cache_key in _LOADER_CACHE:
+            self.loader = _LOADER_CACHE[cache_key]
+        else:
+            self.loader = PageTemplateLoader(
+                [str(p) for p in self.search_paths],
+                default_extension=".html",
+            )
+            _LOADER_CACHE[cache_key] = self.loader
         self._template_cache: Dict[Tuple[str, Optional[str], Optional[str]], PageTemplate] = {}
 
     def extract_text(self, node: Any) -> str:

@@ -204,3 +204,40 @@ def test_render_error_wrapping():
         renderer.render({"name": "broken"})
     assert "Critical rendering failure" in str(exc_info.value)
     assert "broken" in str(exc_info.value)
+
+
+def test_loader_caching_identical_search_paths():
+    """Test renderers with identical search paths share the same PageTemplateLoader."""
+    from asciidoctype.renderer import _LOADER_CACHE, clear_loader_cache
+
+    clear_loader_cache()
+    renderer1 = AsciiDoctypeRenderer(target_format="html5")
+    renderer2 = AsciiDoctypeRenderer(target_format="html5")
+    assert renderer1.loader is renderer2.loader
+    assert len(_LOADER_CACHE) == 1
+
+
+def test_loader_caching_different_search_paths(tmp_path):
+    """Test that renderers with different search paths get different loader instances."""
+    from asciidoctype.renderer import clear_loader_cache
+
+    clear_loader_cache()
+    dir1 = tmp_path / "theme1"
+    dir2 = tmp_path / "theme2"
+    dir1.mkdir()
+    dir2.mkdir()
+
+    renderer1 = AsciiDoctypeRenderer(target_format="html5", search_paths=[dir1])
+    renderer2 = AsciiDoctypeRenderer(target_format="html5", search_paths=[dir2])
+    assert renderer1.loader is not renderer2.loader
+
+
+def test_clear_loader_cache():
+    """Test that clear_loader_cache empties the cache dictionary."""
+    from asciidoctype.renderer import _LOADER_CACHE, clear_loader_cache
+
+    clear_loader_cache()
+    AsciiDoctypeRenderer(target_format="html5")
+    assert len(_LOADER_CACHE) > 0
+    clear_loader_cache()
+    assert len(_LOADER_CACHE) == 0
