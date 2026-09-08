@@ -298,3 +298,151 @@ def test_render_static_url_prefix_context_override(tmp_path):
     node = {"name": "span", "value": "Override test"}
     output = renderer.render(node, context={"static_url_prefix": "/custom_override/"})
     assert '<span data-prefix="/custom_override/">Override test</span>' in output
+
+
+@pytest.fixture(autouse=True)
+def reset_plugin_template_dirs():
+    """Ensure plugin template directories are cleared before and after each test."""
+    if hasattr(AsciiDoctypeRenderer, "clear_registered_template_directories"):
+        AsciiDoctypeRenderer.clear_registered_template_directories()
+    yield
+    if hasattr(AsciiDoctypeRenderer, "clear_registered_template_directories"):
+        AsciiDoctypeRenderer.clear_registered_template_directories()
+
+
+def test_register_template_directory_adds_to_search_paths(tmp_path):
+    """Test register_template_directory adds directory to search_paths ahead of core templates."""
+    plugin_dir = tmp_path / "plugin_tpl"
+    plugin_dir.mkdir()
+    tpl_content = '<p class="plugin-paragraph">${node.get("value")}</p>'
+    (plugin_dir / "paragraph.html").write_text(tpl_content)
+
+    AsciiDoctypeRenderer.register_template_directory(plugin_dir)
+
+    # Verify registered directory is in search_paths
+    renderer = AsciiDoctypeRenderer(target_format="html5")
+    assert renderer.search_paths[0] == plugin_dir.resolve()
+
+    # Verify template resolution uses registered plugin template
+    node = {"name": "paragraph", "value": "Plugin content"}
+    output = renderer.render(node)
+    assert '<p class="plugin-paragraph">Plugin content</p>' in output
+
+    # Verify top-level render() also picks up registered template without search_paths
+    from asciidoctype import render
+
+    top_level_output = render(node)
+    assert '<p class="plugin-paragraph">Plugin content</p>' in top_level_output
+
+
+def test_register_template_directory_precedence_over_custom_search_paths(tmp_path):
+    """Test registered template directories take precedence ahead of custom search_paths."""
+    plugin_dir = tmp_path / "plugin_tpl"
+    plugin_dir.mkdir()
+    (plugin_dir / "paragraph.html").write_text('<p class="plugin">${node.get("value")}</p>')
+
+    custom_dir = tmp_path / "custom_tpl"
+    custom_dir.mkdir()
+    (custom_dir / "paragraph.html").write_text('<p class="custom">${node.get("value")}</p>')
+
+    AsciiDoctypeRenderer.register_template_directory(plugin_dir)
+
+    renderer = AsciiDoctypeRenderer(search_paths=[custom_dir])
+    assert renderer.search_paths[0] == plugin_dir.resolve()
+    assert renderer.search_paths[1] == custom_dir
+
+    node = {"name": "paragraph", "value": "Precedence test"}
+    output = renderer.render(node)
+    assert '<p class="plugin">Precedence test</p>' in output
+
+
+def test_register_template_directory_deduplication(tmp_path):
+    """Test registering the same directory multiple times does not add duplicate search paths."""
+    plugin_dir = tmp_path / "plugin_tpl"
+    plugin_dir.mkdir()
+
+    AsciiDoctypeRenderer.register_template_directory(plugin_dir)
+    AsciiDoctypeRenderer.register_template_directory(str(plugin_dir))
+    AsciiDoctypeRenderer.register_template_directory(plugin_dir.resolve())
+
+    registered = AsciiDoctypeRenderer.get_registered_template_directories()
+    assert len(registered) == 1
+    assert registered[0] == plugin_dir.resolve()
+
+    # When custom search_paths also includes the registered directory
+    renderer = AsciiDoctypeRenderer(search_paths=[plugin_dir, str(plugin_dir)])
+    occurrences = [p for p in renderer.search_paths if p.resolve() == plugin_dir.resolve()]
+    assert len(occurrences) == 1
+
+
+def test_register_template_directory_cache_invalidation(tmp_path):
+    """Test registering or clearing template directories invalidates _LOADER_CACHE."""
+    from asciidoctype.renderer import _LOADER_CACHE
+
+    plugin_dir = tmp_path / "plugin_tpl"
+    plugin_dir.mkdir()
+
+    # Prime the loader cache
+    AsciiDoctypeRenderer(target_format="html5")
+    assert len(_LOADER_CACHE) > 0
+
+    # Register directory -> cache invalidated
+    AsciiDoctypeRenderer.register_template_directory(plugin_dir)
+    assert len(_LOADER_CACHE) == 0
+
+    # Prime again
+    AsciiDoctypeRenderer(target_format="html5")
+    assert len(_LOADER_CACHE) > 0
+
+    # Clear directories -> cache invalidated
+    AsciiDoctypeRenderer.clear_registered_template_directories()
+    assert len(_LOADER_CACHE) == 0
+
+
+def test_clear_registered_template_directories(tmp_path):
+    """Test clear_registered_template_directories resets registered directories and search paths."""
+    plugin_dir = tmp_path / "plugin_tpl"
+    plugin_dir.mkdir()
+
+    AsciiDoctypeRenderer.register_template_directory(plugin_dir)
+    assert len(AsciiDoctypeRenderer.get_registered_template_directories()) == 1
+
+    AsciiDoctypeRenderer.clear_registered_template_directories()
+    assert len(AsciiDoctypeRenderer.get_registered_template_directories()) == 0
+
+    renderer = AsciiDoctypeRenderer(target_format="html5")
+    assert plugin_dir.resolve() not in renderer.search_paths
+
+
+def test_concurrent_registration_thread_safety(tmp_path):
+    """Test concurrent calls to register_template_directory from multiple threads."""
+    import concurrent.futures
+
+    # Test concurrent registration of distinct directories
+    dirs = [tmp_path / f"plugin_{i}" for i in range(30)]
+    for d in dirs:
+        d.mkdir()
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        futures = [
+            executor.submit(AsciiDoctypeRenderer.register_template_directory, d) for d in dirs
+        ]
+        concurrent.futures.wait(futures)
+
+    registered = AsciiDoctypeRenderer.get_registered_template_directories()
+    assert len(registered) == 30
+    assert set(registered) == {d.resolve() for d in dirs}
+
+    # Test concurrent duplicate registration of the same directory
+    shared_dir = tmp_path / "shared"
+    shared_dir.mkdir()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        futures = [
+            executor.submit(AsciiDoctypeRenderer.register_template_directory, shared_dir)
+            for _ in range(20)
+        ]
+        concurrent.futures.wait(futures)
+
+    registered_after = AsciiDoctypeRenderer.get_registered_template_directories()
+    assert len(registered_after) == 31
+    assert shared_dir.resolve() in registered_after

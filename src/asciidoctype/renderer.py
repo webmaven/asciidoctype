@@ -12,6 +12,7 @@ into HTML5 or XHTML representations via Chameleon ZPT templates.
 """
 
 import re
+import threading
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Set, Tuple, Union
 
@@ -51,6 +52,10 @@ class AsciiDoctypeRenderer:
     `loader` (PageTemplateLoader):: Chameleon template loader initialized with search paths.
     `highlighter` (HighlighterCallable, optional):: Syntax highlighting callable.
     `static_url_prefix` (str):: Base URL prefix used for static asset references.
+    `_PLUGIN_TEMPLATE_DIRS` (list[Path]):: Class-level registry of registered
+                                           plugin template directories.
+    `_PLUGIN_REGISTRY_LOCK` (threading.Lock):: Thread synchronization lock protecting
+                                               the plugin registry.
 
     [source,python]
     ----
@@ -58,6 +63,42 @@ class AsciiDoctypeRenderer:
     html_output = renderer.render(node)
     ----
     """
+
+    _PLUGIN_TEMPLATE_DIRS: List[Path] = []
+    _PLUGIN_REGISTRY_LOCK = threading.Lock()
+
+    @classmethod
+    def register_template_directory(cls, path: Union[str, Path]) -> None:
+        """Register a plugin template directory globally for all renderer instances.
+
+        Registered directories take precedence ahead of custom search paths and core
+        fallbacks. Existing loader caches are automatically invalidated.
+
+        [parameters]
+        `path` (str | Path):: Filesystem path to the template directory to register.
+        """
+        resolved = Path(path).resolve()
+        with cls._PLUGIN_REGISTRY_LOCK:
+            if resolved not in cls._PLUGIN_TEMPLATE_DIRS:
+                cls._PLUGIN_TEMPLATE_DIRS.append(resolved)
+            clear_loader_cache()
+
+    @classmethod
+    def clear_registered_template_directories(cls) -> None:
+        """Reset all registered plugin template directories and invalidate loader cache."""
+        with cls._PLUGIN_REGISTRY_LOCK:
+            cls._PLUGIN_TEMPLATE_DIRS.clear()
+            clear_loader_cache()
+
+    @classmethod
+    def get_registered_template_directories(cls) -> List[Path]:
+        """Return a copy of all currently registered plugin template directories.
+
+        [returns]
+        `list[Path]`:: List of registered template directory paths.
+        """
+        with cls._PLUGIN_REGISTRY_LOCK:
+            return list(cls._PLUGIN_TEMPLATE_DIRS)
 
     def __init__(
         self,
@@ -107,12 +148,27 @@ class AsciiDoctypeRenderer:
         base_dir = Path(__file__).parent.resolve()
         core_fallback = base_dir / "core_templates" / self.target_format
 
+        registered_dirs = self.get_registered_template_directories()
         custom_paths: List[Path] = [Path(p) for p in search_paths] if search_paths else []
 
-        if validate_templates and custom_paths:
-            audit_search_paths(custom_paths, strict=self.strict)
+        combined_paths: List[Path] = []
+        seen: Set[Path] = set()
+        for p in registered_dirs:
+            p_resolved = p.resolve()
+            if p_resolved not in seen:
+                seen.add(p_resolved)
+                combined_paths.append(p)
 
-        self.search_paths: List[Path] = custom_paths + [core_fallback]
+        for p in custom_paths:
+            p_resolved = p.resolve()
+            if p_resolved not in seen:
+                seen.add(p_resolved)
+                combined_paths.append(p)
+
+        if validate_templates and combined_paths:
+            audit_search_paths(combined_paths, strict=self.strict)
+
+        self.search_paths: List[Path] = combined_paths + [core_fallback]
 
         cache_key = tuple(str(p) for p in self.search_paths)
         if cache_key in _LOADER_CACHE:
