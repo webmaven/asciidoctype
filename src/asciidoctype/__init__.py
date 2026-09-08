@@ -9,8 +9,14 @@ from .exceptions import (
     AsciiDoctypeSecurityError,
     AsciiDoctypeSecurityWarning,
 )
-from .linter import TemplateFinding, audit_search_paths, audit_template
-from .renderer import AsciiDoctypeRenderer, HighlighterCallable, TargetFormat, render
+from .linter import TemplateFinding, audit_search_paths, audit_template, clear_audit_cache
+from .renderer import (
+    AsciiDoctypeRenderer,
+    HighlighterCallable,
+    TargetFormat,
+    clear_loader_cache,
+    render,
+)
 
 __version__ = "0.1.0a6"
 
@@ -25,5 +31,7 @@ __all__ = [
     "TemplateFinding",
     "audit_search_paths",
     "audit_template",
+    "clear_audit_cache",
+    "clear_loader_cache",
     "render",
 ]
