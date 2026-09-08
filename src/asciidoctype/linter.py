@@ -9,7 +9,7 @@ import re
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List
+from typing import Dict, List, Tuple
 
 from chameleon.zpt.template import PageTemplate
 
@@ -23,6 +23,13 @@ SAFE_EXPRESSIONS = (
     "renderer.render",
     "latex2mathml",
 )
+
+_audit_cache: Dict[Tuple[Tuple[str, ...], float], List["TemplateFinding"]] = {}
+
+
+def clear_audit_cache() -> None:
+    """Clear the in-memory template audit cache."""
+    _audit_cache.clear()
 
 
 @dataclass
@@ -146,11 +153,29 @@ def audit_search_paths(search_paths: List[Path], strict: bool = False) -> List[T
     [raises]
     `AsciiDoctypeSecurityError`:: When `strict=True` and one or more findings are detected.
     """
-    all_findings: List[TemplateFinding] = []
+    sorted_paths_tuple = tuple(str(p.resolve()) for p in sorted(search_paths, key=lambda x: str(x)))
+
+    max_mtime = 0.0
     for path in search_paths:
         if path.is_dir():
-            findings = audit_template_directory(path, recursive=False)
-            all_findings.extend(findings)
+            for template_file in path.glob("*.html"):
+                try:
+                    mtime = template_file.stat().st_mtime
+                    if mtime > max_mtime:
+                        max_mtime = mtime
+                except OSError:
+                    pass
+
+    cache_key = (sorted_paths_tuple, max_mtime)
+    if cache_key in _audit_cache:
+        all_findings = _audit_cache[cache_key]
+    else:
+        all_findings = []
+        for path in search_paths:
+            if path.is_dir():
+                findings = audit_template_directory(path, recursive=False)
+                all_findings.extend(findings)
+        _audit_cache[cache_key] = all_findings
 
     for finding in all_findings:
         if strict:
