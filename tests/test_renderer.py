@@ -241,3 +241,60 @@ def test_clear_loader_cache():
     assert len(_LOADER_CACHE) > 0
     clear_loader_cache()
     assert len(_LOADER_CACHE) == 0
+
+
+def test_renderer_static_url_prefix_default():
+    """Test AsciiDoctypeRenderer defaults static_url_prefix to '/'."""
+    renderer = AsciiDoctypeRenderer()
+    assert renderer.static_url_prefix == "/"
+
+
+def test_renderer_static_url_prefix_custom():
+    """Test AsciiDoctypeRenderer accepts custom static_url_prefix."""
+    renderer = AsciiDoctypeRenderer(static_url_prefix="/static/")
+    assert renderer.static_url_prefix == "/static/"
+
+
+def test_top_level_render_static_url_prefix(tmp_path):
+    """Test top-level render() accepts static_url_prefix and injects into template ctx."""
+    from asciidoctype import render
+
+    custom_tpl_dir = tmp_path / "templates"
+    custom_tpl_dir.mkdir()
+    tpl_content = "<p class=\"${ctx.get('static_url_prefix')}\">${node.value}</p>"
+    (custom_tpl_dir / "paragraph.html").write_text(tpl_content)
+
+    node = {
+        "name": "paragraph",
+        "value": "Test content",
+    }
+    output = render(node, search_paths=[custom_tpl_dir], static_url_prefix="/assets/")
+    assert '<p class="/assets/">Test content</p>' in output
+
+
+def test_render_static_url_prefix_in_context(tmp_path):
+    """Test static_url_prefix is accessible in template ctx during rendering."""
+    custom_tpl_dir = tmp_path / "templates"
+    custom_tpl_dir.mkdir()
+    tpl_content = "<span data-prefix=\"${ctx['static_url_prefix']}\">${node.value}</span>"
+    (custom_tpl_dir / "span.html").write_text(tpl_content)
+
+    renderer = AsciiDoctypeRenderer(search_paths=[custom_tpl_dir], static_url_prefix="/cdn/")
+    node = {"name": "span", "value": "Prefix test"}
+    output = renderer.render(node)
+    assert '<span data-prefix="/cdn/">Prefix test</span>' in output
+
+
+def test_render_static_url_prefix_context_override(tmp_path):
+    """Test explicit context['static_url_prefix'] overrides renderer default and instance prefix."""
+    custom_tpl_dir = tmp_path / "templates"
+    custom_tpl_dir.mkdir()
+    tpl_content = "<span data-prefix=\"${ctx['static_url_prefix']}\">${node.value}</span>"
+    (custom_tpl_dir / "span.html").write_text(tpl_content)
+
+    renderer = AsciiDoctypeRenderer(
+        search_paths=[custom_tpl_dir], static_url_prefix="/default_prefix/"
+    )
+    node = {"name": "span", "value": "Override test"}
+    output = renderer.render(node, context={"static_url_prefix": "/custom_override/"})
+    assert '<span data-prefix="/custom_override/">Override test</span>' in output

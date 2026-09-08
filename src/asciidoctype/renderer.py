@@ -50,6 +50,7 @@ class AsciiDoctypeRenderer:
     `strict` (bool):: Whether strict schema, template, and URI validation is enforced.
     `loader` (PageTemplateLoader):: Chameleon template loader initialized with search paths.
     `highlighter` (HighlighterCallable, optional):: Syntax highlighting callable.
+    `static_url_prefix` (str):: Base URL prefix used for static asset references.
 
     [source,python]
     ----
@@ -66,6 +67,7 @@ class AsciiDoctypeRenderer:
         validate_templates: bool = True,
         max_depth: int = 500,
         highlighter: Optional[HighlighterCallable] = None,
+        static_url_prefix: str = "/",
     ):
         """Initialize the rendering engine with format choices and template search paths.
 
@@ -84,6 +86,8 @@ class AsciiDoctypeRenderer:
                                       protection. Defaults to `500`.
         `highlighter` (HighlighterCallable, optional):: Optional callable accepting `(code, lang)`
                                                         and returning highlighted markup or `None`.
+        `static_url_prefix` (str, optional):: Base URL prefix used for static asset references
+                                              in templates. Defaults to `"/"`.
 
         [raises]
         `ValueError`:: If `target_format` is not one of `"html5"` or `"xhtml"`.
@@ -98,6 +102,7 @@ class AsciiDoctypeRenderer:
         self.strict = strict
         self.max_depth = max_depth
         self.highlighter = highlighter
+        self.static_url_prefix = static_url_prefix
 
         base_dir = Path(__file__).parent.resolve()
         core_fallback = base_dir / "core_templates" / self.target_format
@@ -263,6 +268,7 @@ class AsciiDoctypeRenderer:
             raise TypeError("Invalid node structure passed to rendering processor.")
 
         ctx = dict(context) if context else {}
+        ctx.setdefault("static_url_prefix", self.static_url_prefix)
 
         # Recursion depth and cycle protection
         depth: int = ctx.get("_depth", 0) + 1
@@ -354,6 +360,7 @@ def render(
     max_depth: int = 500,
     highlighter: Optional[HighlighterCallable] = None,
     context: Optional[Dict[str, Any]] = None,
+    static_url_prefix: str = "/",
 ) -> str:
     """Convenience function to render an ASG node into HTML5 or XHTML.
 
@@ -369,6 +376,8 @@ def render(
     `highlighter` (HighlighterCallable, optional):: Syntax highlighting callable.
                                                     Defaults to `None`.
     `context` (dict[str, Any], optional):: Context variables dictionary. Defaults to `None`.
+    `static_url_prefix` (str, optional):: Base URL prefix used for static asset references
+                                          in templates. Defaults to `"/"`.
 
     [returns]
     `str`:: Rendered HTML5 or XHTML string output.
@@ -387,5 +396,6 @@ def render(
         validate_templates=validate_templates,
         max_depth=max_depth,
         highlighter=highlighter,
+        static_url_prefix=static_url_prefix,
     )
     return renderer.render(node, context=context)
