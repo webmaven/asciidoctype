@@ -67,18 +67,43 @@ renderer = asciidoctype.AsciiDoctypeRenderer(
     target_format="html5",         # or "xhtml"
     search_paths=["theme/"],       # optional, ordered str or Path objects
     highlighter=my_highlighter,    # optional Callable[[str, str], Optional[str]]
+    static_url_prefix="/static/",  # optional str, base URL for static assets (default: "/")
 )
 ----
 
 **Responsibilities:**
 
 * Validate `target_format` and raise `ValueError` on bad values.
+* Incorporate globally registered plugin template directories ahead of caller-supplied `search_paths`, deduplicating entries while preserving precedence.
 * Build the ordered search path list, normalizing `str` and `Path` entries and appending the bundled core fallback last.
-* Initialise a `chameleon.PageTemplateLoader` over the resolved paths.
+* Acquire or initialize a cached `chameleon.PageTemplateLoader` instance via `_LOADER_CACHE` keyed by resolved search paths.
+* Audit custom search paths for template security and syntax validity (with caching via `_audit_cache`).
 * Memoize candidate template resolution in `_template_cache` for sub-millisecond node dispatch.
+* Inject `static_url_prefix` into the rendering context (`ctx`) for downstream template asset references.
 * Dispatch each incoming ASG node dict to the correct template via `render()`.
 * Wrap any template runtime error in `AsciiDoctypeRenderingError` for clean
   diagnostics.
+
+==== Plugin Template Directory Registration
+
+Extensions and downstream packages can register template directories globally using class methods on `AsciiDoctypeRenderer`:
+
+[source,python]
+----
+# Register a plugin directory globally
+AsciiDoctypeRenderer.register_template_directory("my_plugin/templates")
+
+# Inspect currently registered directories
+plugin_dirs = AsciiDoctypeRenderer.get_registered_template_directories()
+
+# Reset registered directories (e.g. in test teardown or reloads)
+AsciiDoctypeRenderer.clear_registered_template_directories()
+----
+
+* **Thread safety:** Registry access is synchronized via an internal `threading.Lock` (`_PLUGIN_REGISTRY_LOCK`), guaranteeing safe concurrent registration from multiple threads or workers.
+* **Precedence:** Registered plugin directories take precedence ahead of caller-supplied `search_paths` and core fallbacks (see <<template-resolution-pipeline>>).
+* **Deduplication:** Path resolution ensures duplicate registrations of the same directory are ignored.
+* **Cache invalidation:** Calling `register_template_directory()` or `clear_registered_template_directories()` automatically clears `_LOADER_CACHE` so subsequently created renderers pick up the updated path hierarchy immediately.
 
 === 2.2 `AsciiDoctypeRenderingError`
 
@@ -88,10 +113,26 @@ degradation without catching every possible Python exception.
 
 === 2.3 Chameleon `PageTemplateLoader` & Dispatch Caching
 
-Manages the compiled-bytecode template cache. Templates are compiled to Python
-bytecode on first use; subsequent calls reuse the cache. In addition, `AsciiDoctypeRenderer`
-memoizes resolved template references in `_template_cache` keyed on `(node_name, type, variant)`,
-giving ultra-fast rendering throughput even on deeply nested documents.
+AsciiDoctype employs a two-tier caching architecture to maximize rendering throughput:
+
+==== Compiled Loader Cache (`_LOADER_CACHE`)
+
+At the module level, `asciidoctype.renderer` maintains `_LOADER_CACHE`, a dictionary mapping canonical tuples of resolved search paths (`Tuple[str, ...]`) to `PageTemplateLoader` instances:
+
+[source,python]
+----
+_LOADER_CACHE: Dict[Tuple[str, ...], PageTemplateLoader] = {}
+----
+
+* **Cross-renderer sharing:** When multiple `AsciiDoctypeRenderer` instances are initialized with the same effective search paths (such as across web workers, parallel processing pipelines, or repeated rendering runs), they share the same compiled `PageTemplateLoader`. This eliminates redundant filesystem checks and Chameleon bytecode compilation.
+* **Invalidation:** The cache can be manually flushed using `asciidoctype.renderer.clear_loader_cache()`, and is automatically cleared whenever plugin directories are registered or cleared via `register_template_directory()` or `clear_registered_template_directories()`.
+
+==== Per-Instance Dispatch Cache (`_template_cache`)
+
+Within each `AsciiDoctypeRenderer` instance, resolved template references are memoized in `_template_cache` keyed on `(node_name, type, variant)`:
+
+* On first encounter of a node signature (e.g. `("paragraph", None, None)` or `("image", "inline", None)`), the renderer queries the loader's candidate list and caches the resolved `PageTemplate`.
+* Subsequent nodes with the same signature dispatch directly to the cached template, bypassing loader lookups entirely and enabling ultra-fast throughput on deeply nested documents.
 
 === 2.4 MathML Conversion (`latex2mathml`)
 
@@ -102,30 +143,51 @@ for client-side JavaScript rendering engines like MathJax or KaTeX.
 
 === 2.5 Template Security Auditing (`asciidoctype.linter`)
 
-Static analysis utilities (`audit_search_paths`, `audit_template`, and `TemplateFinding`)
-audit custom template override directories for syntax errors and unsafe `structure` directives.
+Static analysis utilities (`audit_search_paths`, `audit_template`, `audit_template_directory`, and `TemplateFinding`)
+audit custom template override directories for syntax errors, uncompilable Chameleon ZPT expressions, and unsafe `structure` directives that disable HTML escaping.
 
-== 3. Template Resolution Pipeline
+==== Audit Result Caching (`_audit_cache`)
+
+To eliminate filesystem traversal and parsing overhead on repeated renderer initializations (e.g. across test suites or batch document processing), `audit_search_paths` utilizes an in-memory cache `_audit_cache`:
+
+[source,python]
+----
+_audit_cache: Dict[Tuple[Tuple[str, ...], float], List[TemplateFinding]] = {}
+----
+
+* **Cache key:** `(sorted_paths_tuple, max_mtime)`, where `sorted_paths_tuple` is the lexicographically sorted tuple of resolved directory path strings, and `max_mtime` is the maximum modification timestamp (`st_mtime`) among all `*.html` template files across all audited search paths.
+* **Automatic invalidation:** If no template files have changed on disk, cached findings are returned immediately without reading or linting files from disk. If any template file is modified, created, or touched, its updated `st_mtime` changes the cache key, triggering a fresh audit.
+* **Strict mode support:** When `strict=True`, cached findings are re-evaluated to raise `AsciiDoctypeSecurityError` immediately without re-reading the filesystem.
+* **Manual clearing:** The cache can be explicitly cleared using `asciidoctype.linter.clear_audit_cache()`.
+
+== [[template-resolution-pipeline]]3. Template Resolution Pipeline
 
 Template lookup follows a strict precedence order at every `render()` call:
 
 ....
-Caller search_paths[0]   →  search_paths[1]  →  …  →  core_templates/<fmt>/
-(user overrides)            (active theme)          (bundled fallback)
+Registered plugin dirs   →  Caller search_paths   →  core_templates/<fmt>/
+(global plugins)            (user / theme overrides) (bundled fallback)
 ....
 
-The algorithm:
+When an `AsciiDoctypeRenderer` is initialized, it builds an ordered search path list:
 
-1. Compute `node["name"]` (e.g. `"paragraph"`).
-2. Call `self.loader["paragraph.html"]`.
-3. Chameleon's `PageTemplateLoader` searches its path list in order and returns
-   the first match.
-4. If no match is found anywhere, `ValueError` is caught internally and
-   `fallback_container.html` is used instead.
-5. The resolved template is executed with `(node=node, renderer=self, ctx=ctx)`.
+1. **Registered plugin directories:** Any directories registered globally via `AsciiDoctypeRenderer.register_template_directory(path)`, in order of registration.
+2. **Caller search paths:** Any directories supplied via `search_paths` in the constructor or functional `render()` call, in caller-specified order.
+3. **Core fallback templates:** The library's bundled templates for the target format (`core_templates/<target_format>/`).
 
-This means a theme can override any single template file without providing all
-of them — missing overrides silently fall back to the bundled core.
+All directory paths are resolved and deduplicated preserving their first occurrence.
+
+The lookup algorithm at render time:
+
+1. Compute candidate template names based on `node["name"]`, `node.get("type")`, and `node.get("variant")` (e.g. polymorphic dispatch for `image_block.html` vs `image_inline.html`, or `footnote_ref.html` vs `footnote.html`).
+2. Check `self._template_cache` for a memoized `PageTemplate` instance.
+3. If not cached, query Chameleon's `PageTemplateLoader` across the resolved search paths in order:
+   `Registered plugin dirs  →  Caller search_paths  →  core_templates/<fmt>/`
+4. The first matching template file found in the path hierarchy is returned and compiled.
+5. If no candidate match is found anywhere across the paths, `fallback_container.html` is used instead (or `AsciiDoctypeRenderingError` is raised under `strict=True`).
+6. The resolved template is executed with `(node=node, renderer=self, ctx=ctx)`.
+
+This multi-tiered hierarchy allows reusable plugins to provide custom components or themes, callers to override specific templates for a given project, and missing templates to fall back seamlessly to the bundled core.
 
 === 3.1 Template Variables Available in Every Template
 
@@ -145,9 +207,29 @@ recursive child rendering.
 
 |`ctx`
 |`dict`
-|Arbitrary caller-supplied context (e.g. site settings, base URL). Empty dict
-if not provided. Templates may read from it but must not mutate it.
+|Caller-supplied rendering context dictionary (e.g. site settings, base URL).
+Templates may read from it but must not mutate it. The renderer automatically
+ensures `static_url_prefix` is present in `ctx` (defaulting to `"/"` or the
+renderer's configured `static_url_prefix`), injected via
+`ctx.setdefault("static_url_prefix", self.static_url_prefix)`.
 |===
+
+==== Static URL Prefix Configuration (`static_url_prefix`)
+
+Templates frequently need to resolve references to static assets (stylesheets, scripts, images, icons). Rather than hardcoding fixed paths or domain roots, templates reference `ctx['static_url_prefix']` or `${ctx.static_url_prefix}`:
+
+[source,xml]
+----
+<link rel="stylesheet"
+      tal:attributes="href string:${ctx.static_url_prefix}css/asciidoctor.css" />
+<img tal:attributes="src string:${ctx.static_url_prefix}${node.target}" />
+----
+
+`static_url_prefix` can be configured and overridden at three levels:
+
+1. **Renderer default:** Configured on `AsciiDoctypeRenderer(static_url_prefix="/static/")` (defaults to `"/"`).
+2. **Top-level render shortcut:** Passed to `asciidoctype.render(node, static_url_prefix="/static/")`.
+3. **Per-render call override:** Passed in the `context` dictionary to `renderer.render(node, context={"static_url_prefix": "/custom/"})`. Because context injection uses `ctx.setdefault("static_url_prefix", self.static_url_prefix)`, an explicit key in `context` takes precedence over the renderer-level default.
 
 === 3.2 Recursive Child Rendering in Templates
 
@@ -915,18 +997,24 @@ asciidoctype/
 ├── tests/
 │   ├── conftest.py
 │   ├── test_admonition_sidebar.py
+│   ├── test_asg_real_integration.py
 │   ├── test_complex_lists.py
 │   ├── test_environment.py
 │   ├── test_example_quote.py
+│   ├── test_gallery_output.py
+│   ├── test_highlighter.py
 │   ├── test_html5_blocks.py
 │   ├── test_html5_document.py
 │   ├── test_html5_inline.py
 │   ├── test_image_nodes.py
 │   ├── test_inline_macros.py
+│   ├── test_linter.py
 │   ├── test_list_nodes.py
+│   ├── test_matrix_parity.py
 │   ├── test_media_interactive.py
 │   ├── test_ref_footnote.py
 │   ├── test_renderer.py
+│   ├── test_security_escaping.py
 │   ├── test_special_blocks.py
 │   ├── test_table_node.py
 │   ├── test_template_overrides.py
@@ -976,10 +1064,11 @@ asciidoctype/
 Downstream systems (Golem SSG, EPUB compilers, etc.) can extend the rendering
 pipeline without modifying AsciiDoctype:
 
-=== 8.1 Custom Templates via `search_paths`
+=== 8.1 Custom Templates via `search_paths` and Plugin Registration
 
-The most common pattern: provide a theme directory with custom `.html` template
-files. The templates receive the same `node`, `renderer`, and `ctx` variables.
+Downstream systems can supply custom `.html` template files per-renderer via `search_paths`
+or globally via `AsciiDoctypeRenderer.register_template_directory(path)`. The templates
+receive the same `node`, `renderer`, and `ctx` variables.
 
 === 8.2 Custom ASG Nodes
 
@@ -997,5 +1086,5 @@ JavaScript-driven interactive features.
 === 8.4 Context Dictionary
 
 The `ctx` dict flows through every recursive call. A Golem orchestrator might
-populate it with site-level settings (`base_url`, `locale`, navigation data)
+populate it with site-level settings (`base_url`, `locale`, `static_url_prefix`, navigation data)
 that templates can read to produce context-aware output.
