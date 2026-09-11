@@ -1,19 +1,5 @@
 = AsciiDoctype
-:toc: left
-:toc-title: Contents
-:toclevels: 3
-:icons: font
-:source-highlighter: highlight.js
 :description: A standalone, pure-Python HTML5 and XHTML rendering library for AsciiDoctrine ASG dictionaries.
-
-image:https://img.shields.io/badge/License-Apache%202.0-blue.svg[Apache 2.0 License, link=LICENSE.adoc]
-image:https://img.shields.io/badge/python-%3E%3D3.10-green[Python 3.10+]
-image:https://img.shields.io/badge/chameleon-%3E%3D4.0-orange[Chameleon 4.0+]
-image:https://img.shields.io/badge/latex2mathml-%3E%3D3.77-purple[latex2mathml 3.77+]
-image:https://img.shields.io/badge/asciimath2mathml-%3E%3D0.3.0b1-teal[asciimath2mathml 0.3.0b1+]
-image:https://img.shields.io/badge/asciidoctrine-%3E%3D0.2.0a7-blue[AsciiDoctrine 0.2.0a7+]
-image:https://img.shields.io/pypi/v/asciidoctype.svg[PyPI, link=https://pypi.org/project/asciidoctype/]
-
 
 AsciiDoctype is a **headless, pure-Python rendering library** that lowers the
 Resolved Abstract Semantic Graph (ASG) produced by
@@ -24,12 +10,30 @@ It is the designated rendering layer in the **AsciiDoctrine ecosystem** — sitt
 between the semantic parser and any downstream orchestrator (Golem SSG, EPUB
 compilers, custom toolchains).
 
+image:https://img.shields.io/badge/License-Apache%202.0-blue.svg[Apache 2.0 License, link=LICENSE.adoc]
+image:https://img.shields.io/badge/python-%3E%3D3.10-green[Python 3.10+]
+image:https://img.shields.io/badge/chameleon-%3E%3D4.0-orange[Chameleon 4.0+]
+image:https://img.shields.io/badge/latex2mathml-%3E%3D3.77-purple[latex2mathml 3.77+]
+image:https://img.shields.io/badge/asciimath2mathml-%3E%3D0.3.0b1-teal[asciimath2mathml 0.3.0b1+]
+image:https://img.shields.io/badge/asciidoctrine-%3E%3D0.2.0a7-blue[AsciiDoctrine 0.2.0a7+]
+image:https://img.shields.io/pypi/v/asciidoctype.svg[PyPI, link=https://pypi.org/project/asciidoctype/]
+
 ....
 +--------------------+      +------------------+      +---------------------+
 |   AsciiDoctrine    | ───> |   AsciiDoctype   | ───> |   Golem / EPUB /    |
 | (Pure Semantic ASG)|      | (Chameleon ZPT)  |      |   Custom Tool       |
 +--------------------+      +------------------+      +---------------------+
 ....
+
+:toc: macro
+:toc-title: Contents
+:toclevels: 3
+:icons: font
+:source-highlighter: highlight.js
+
+toc::[]
+
+
 
 == Why AsciiDoctype?
 
