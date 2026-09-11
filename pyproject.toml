@@ -28,6 +28,7 @@ dependencies = [
     "chameleon>=4.0.0",
     "asciidoctrine>=0.2.0a7",
     "latex2mathml>=3.77.0",
+    "asciimath2mathml>=0.3.0b1",
 ]
 
 

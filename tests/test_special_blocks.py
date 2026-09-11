@@ -53,7 +53,7 @@ Literal content block
 def test_render_special_blocks_xhtml():
     renderer = AsciiDoctypeRenderer(target_format="xhtml")
 
-    # Stem node with asciimath variant fallback test
+    # Stem node with asciimath variant test
     node_stem_asciimath = {
         "name": "stem",
         "type": "block",
@@ -62,4 +62,5 @@ def test_render_special_blocks_xhtml():
     }
     output = renderer.render(node_stem_asciimath)
     assert '<div class="stemblock">' in output
-    assert "sqrt(x)" in output
+    assert '<math xmlns="http://www.w3.org/1998/Math/MathML"' in output
+    assert "<msqrt>" in output

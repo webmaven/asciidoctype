@@ -20,8 +20,8 @@ link:CONTRIBUTING.adoc[CONTRIBUTING.adoc].
 * `git`
 * `gh` (GitHub CLI, preferred for cloning/branching)
 
-Key runtime dependencies: `chameleon`, `asciidoctrine`, and `latex2mathml`
-(used for converting LaTeX stem blocks into MathML).
+Key runtime dependencies: `chameleon`, `asciidoctrine`, `latex2mathml`, and
+`asciimath2mathml` (used for converting LaTeX and AsciiMath stem blocks into MathML).
 
 === Setup
 
@@ -186,7 +186,7 @@ single-line templates for inline elements (`span.html`, `text.html`).
 `<h1>`, `<h2>`, … `<h6>` elements with `tal:condition="hlevel == N"` instead.
 
 |`modules` not available in template namespace
-|In templates, `modules` is not available in the Chameleon namespace. Use `__import__('package.module').module` to import packages dynamically inside templates (used by `stem.html` for `latex2mathml`).
+|In templates, `modules` is not available in the Chameleon namespace. Use `__import__('package.module').module` or `__import__('package')` to import packages dynamically inside templates (used by `stem.html` and `passthrough.html` for `latex2mathml` and `asciimath2mathml`).
 |===
 
 == Project Standards

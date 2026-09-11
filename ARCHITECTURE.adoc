@@ -134,11 +134,11 @@ Within each `AsciiDoctypeRenderer` instance, resolved template references are me
 * On first encounter of a node signature (e.g. `("paragraph", None, None)` or `("image", "inline", None)`), the renderer queries the loader's candidate list and caches the resolved `PageTemplate`.
 * Subsequent nodes with the same signature dispatch directly to the cached template, bypassing loader lookups entirely and enabling ultra-fast throughput on deeply nested documents.
 
-=== 2.4 MathML Conversion (`latex2mathml`)
+=== 2.4 MathML Conversion (`latex2mathml` and `asciimath2mathml`)
 
-AsciiDoctype relies on `latex2mathml` as a runtime dependency. The `stem` and
-`passthrough` (with `latexmath` style) templates use `latex2mathml` at render
-time to convert LaTeX equations into native MathML markup, eliminating the need
+AsciiDoctype relies on `latex2mathml` and `asciimath2mathml` as runtime dependencies. The `stem` and
+`passthrough` (with `latexmath` or `asciimath` styles) templates use them at render
+time to convert LaTeX equations and AsciiMath formulas into native MathML markup, eliminating the need
 for client-side JavaScript rendering engines like MathJax or KaTeX.
 
 === 2.5 Template Security Auditing (`asciidoctype.linter`)
@@ -604,7 +604,7 @@ Output: `<div class="verseblock">` containing `<pre class="content">` and option
 ==== `stem`
 
 Template: `stem.html` +
-Output: `<div class="stemblock">` containing equation content. For `latexmath` variant, converts to native MathML using `latex2mathml`. For `asciimath` variant, emits raw text as a placeholder.
+Output: `<div class="stemblock">` containing equation content. For `latexmath` variant, converts to native MathML using `latex2mathml`. For `asciimath` variant, converts to native MathML using `asciimath2mathml`. Unrecognized variants fall back to raw content.
 
 **Coverage status:** ✅ Implemented
 
@@ -613,7 +613,7 @@ Output: `<div class="stemblock">` containing equation content. For `latexmath` v
 ==== `passthrough`
 
 Template: `passthrough.html` +
-Output: Emits node value as raw, unescaped markup. When `style` attribute is `latexmath`, converts to MathML like `stem`. Security note: raw HTML emission.
+Output: Emits node value as raw, unescaped markup. When `style` attribute is `latexmath` or `asciimath`, converts to MathML like `stem` using `latex2mathml` or `asciimath2mathml` respectively. Security note: raw HTML emission.
 
 **Coverage status:** ✅ Implemented
 

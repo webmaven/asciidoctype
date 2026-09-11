@@ -22,6 +22,7 @@ STRUCTURE_PATTERN = re.compile(
 SAFE_EXPRESSIONS = (
     "renderer.render",
     "latex2mathml",
+    "asciimath2mathml",
 )
 
 _audit_cache: Dict[Tuple[Tuple[str, ...], float], List["TemplateFinding"]] = {}

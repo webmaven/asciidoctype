@@ -143,13 +143,13 @@ x + y = z
     out_block = renderer.render(asg_block)
 
     assert '<div class="stemblock">' in out_block
-    assert "x + y = z" in out_block
+    assert '<math xmlns="http://www.w3.org/1998/Math/MathML"' in out_block
 
     doc_inline = "Inline math stem:[sqrt(4) = 2] here."
     asg_inline = resolve_adoc(doc_inline)
     out_inline = renderer.render(asg_inline)
 
-    assert "sqrt(4) = 2" in out_inline
+    assert '<math xmlns="http://www.w3.org/1998/Math/MathML"' in out_inline
     assert '<div class="stemblock">' not in out_inline
 
 
