@@ -25,7 +25,7 @@ SAFE_EXPRESSIONS = (
     "asciimath2mathml",
 )
 
-_audit_cache: Dict[Tuple[Tuple[str, ...], float], List["TemplateFinding"]] = {}
+_audit_cache: Dict[Tuple[Tuple[str, ...], float, int], List["TemplateFinding"]] = {}
 
 
 def clear_audit_cache() -> None:
@@ -154,7 +154,7 @@ def audit_search_paths(search_paths: List[Path], strict: bool = False) -> List[T
     [raises]
     `AsciiDoctypeSecurityError`:: When `strict=True` and one or more findings are detected.
     """
-    sorted_paths_tuple = tuple(str(p.resolve()) for p in sorted(search_paths, key=lambda x: str(x)))
+    sorted_paths_tuple = tuple(sorted(str(p.resolve()) for p in search_paths))
 
     max_mtime = 0.0
     for path in search_paths:
@@ -167,16 +167,17 @@ def audit_search_paths(search_paths: List[Path], strict: bool = False) -> List[T
                 except OSError:
                     pass
 
-    cache_key = (sorted_paths_tuple, max_mtime)
+    file_count = sum(len(list(p.glob("*.html"))) for p in search_paths if p.is_dir())
+    cache_key = (sorted_paths_tuple, max_mtime, file_count)
     if cache_key in _audit_cache:
-        all_findings = _audit_cache[cache_key]
+        all_findings = list(_audit_cache[cache_key])
     else:
         all_findings = []
         for path in search_paths:
             if path.is_dir():
                 findings = audit_template_directory(path, recursive=False)
                 all_findings.extend(findings)
-        _audit_cache[cache_key] = all_findings
+        _audit_cache[cache_key] = list(all_findings)
 
     for finding in all_findings:
         if strict:

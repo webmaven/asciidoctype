@@ -97,6 +97,43 @@ def test_passthrough_asciimath_block_inlines(target_format: str):
 
 
 @pytest.mark.parametrize("target_format", ["html5", "xhtml"])
+def test_passthrough_asciimath_multi_inlines_single_math(target_format: str):
+    """Test passthrough asciimath with multi-token inlines renders single MathML."""
+    renderer = AsciiDoctypeRenderer(target_format=target_format)
+    node = {
+        "name": "passthrough",
+        "type": "block",
+        "attributes": {"style": "asciimath"},
+        "inlines": [
+            {"name": "text", "type": "string", "value": "x^2"},
+            {"name": "text", "type": "string", "value": " + "},
+            {"name": "text", "type": "string", "value": "y^2"},
+        ],
+    }
+    output = renderer.render(node)
+    assert output.count('<math xmlns="http://www.w3.org/1998/Math/MathML"') == 1
+    assert "<msup>" in output
+
+
+@pytest.mark.parametrize("target_format", ["html5", "xhtml"])
+def test_passthrough_latexmath_multi_inlines_single_math(target_format: str):
+    """Test passthrough latexmath with multi-token inlines renders single MathML."""
+    renderer = AsciiDoctypeRenderer(target_format=target_format)
+    node = {
+        "name": "passthrough",
+        "type": "block",
+        "attributes": {"style": "latexmath"},
+        "inlines": [
+            {"name": "text", "type": "string", "value": r"\frac{a}"},
+            {"name": "text", "type": "string", "value": r"{b}"},
+        ],
+    }
+    output = renderer.render(node)
+    assert output.count('<math xmlns="http://www.w3.org/1998/Math/MathML"') == 1
+    assert "<mfrac>" in output
+
+
+@pytest.mark.parametrize("target_format", ["html5", "xhtml"])
 def test_stem_latexmath_block_and_inline(target_format: str):
     """Test latexmath block and inline continue to render MathML via latex2mathml."""
     renderer = AsciiDoctypeRenderer(target_format=target_format)

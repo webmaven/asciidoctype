@@ -179,3 +179,57 @@ def test_audit_cache_nonexistent_and_empty_dirs(tmp_path: Path):
         findings2 = audit_search_paths([non_dir, empty_dir])
         assert findings2 == []
         mock_audit.assert_not_called()
+
+
+def test_audit_cache_sorted_after_resolving():
+    """Verify search paths in cache key are sorted after resolving canonical paths."""
+    clear_audit_cache()
+    dir_a = Path("src").resolve()
+    dir_b = Path("tests")
+    audit_search_paths([dir_a, dir_b])
+    key = list(_audit_cache.keys())[0]
+    paths_in_key = key[0]
+    assert paths_in_key == tuple(sorted(str(p.resolve()) for p in [dir_a, dir_b]))
+
+
+def test_audit_cache_file_count_invalidation(tmp_path: Path):
+    """Verify adding a file with older mtime invalidates audit cache via file count."""
+    clear_audit_cache()
+    custom_dir = tmp_path / "theme"
+    custom_dir.mkdir()
+    tmpl1 = custom_dir / "safe.html"
+    tmpl1.write_text("<div>safe</div>", encoding="utf-8")
+    os.utime(tmpl1, (1000.0, 1000.0))
+
+    findings1 = audit_search_paths([custom_dir])
+    assert len(findings1) == 0
+
+    # Add a new file with older mtime than 1000.0
+    tmpl2 = custom_dir / "unsafe.html"
+    tmpl2.write_text("<div tal:replace=\"structure python: node['leak']\"></div>", encoding="utf-8")
+    os.utime(tmpl2, (500.0, 500.0))
+
+    with pytest.warns(AsciiDoctypeSecurityWarning):
+        findings2 = audit_search_paths([custom_dir])
+    assert len(findings2) == 1
+    assert "leak" in findings2[0].expression
+
+
+def test_audit_cache_defensive_copy(tmp_path: Path):
+    """Verify audit_search_paths returns a defensive copy of findings that callers cannot mutate."""
+    clear_audit_cache()
+    custom_dir = tmp_path / "theme"
+    custom_dir.mkdir()
+    tmpl = custom_dir / "unsafe.html"
+    tmpl.write_text("<div tal:replace=\"structure python: node['leak']\"></div>", encoding="utf-8")
+
+    with pytest.warns(AsciiDoctypeSecurityWarning):
+        findings = audit_search_paths([custom_dir])
+    assert len(findings) == 1
+
+    findings.clear()
+    assert len(findings) == 0
+
+    with pytest.warns(AsciiDoctypeSecurityWarning):
+        cached_findings = audit_search_paths([custom_dir])
+    assert len(cached_findings) == 1

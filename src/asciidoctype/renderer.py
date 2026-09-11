@@ -32,11 +32,13 @@ _RE_MULT_COL = re.compile(r"^(\d+)\*(.*)$")
 _RE_NUM_COL = re.compile(r"(\d+(?:\.\d+)?)")
 
 _LOADER_CACHE: Dict[Tuple[str, ...], PageTemplateLoader] = {}
+_LOADER_CACHE_LOCK = threading.Lock()
 
 
 def clear_loader_cache() -> None:
     """Clear the shared compiled PageTemplateLoader cache."""
-    _LOADER_CACHE.clear()
+    with _LOADER_CACHE_LOCK:
+        _LOADER_CACHE.clear()
 
 
 class AsciiDoctypeRenderer:
@@ -146,7 +148,7 @@ class AsciiDoctypeRenderer:
         self.static_url_prefix = static_url_prefix
 
         base_dir = Path(__file__).parent.resolve()
-        core_fallback = base_dir / "core_templates" / self.target_format
+        core_fallback = (base_dir / "core_templates" / self.target_format).resolve()
 
         registered_dirs = self.get_registered_template_directories()
         custom_paths: List[Path] = [Path(p) for p in search_paths] if search_paths else []
@@ -157,13 +159,13 @@ class AsciiDoctypeRenderer:
             p_resolved = p.resolve()
             if p_resolved not in seen:
                 seen.add(p_resolved)
-                combined_paths.append(p)
+                combined_paths.append(p_resolved)
 
         for p in custom_paths:
             p_resolved = p.resolve()
             if p_resolved not in seen:
                 seen.add(p_resolved)
-                combined_paths.append(p)
+                combined_paths.append(p_resolved)
 
         if validate_templates and combined_paths:
             audit_search_paths(combined_paths, strict=self.strict)
@@ -171,14 +173,15 @@ class AsciiDoctypeRenderer:
         self.search_paths: List[Path] = combined_paths + [core_fallback]
 
         cache_key = tuple(str(p) for p in self.search_paths)
-        if cache_key in _LOADER_CACHE:
-            self.loader = _LOADER_CACHE[cache_key]
-        else:
-            self.loader = PageTemplateLoader(
-                [str(p) for p in self.search_paths],
-                default_extension=".html",
-            )
-            _LOADER_CACHE[cache_key] = self.loader
+        with _LOADER_CACHE_LOCK:
+            if cache_key in _LOADER_CACHE:
+                self.loader = _LOADER_CACHE[cache_key]
+            else:
+                self.loader = PageTemplateLoader(
+                    [str(p) for p in self.search_paths],
+                    default_extension=".html",
+                )
+                _LOADER_CACHE[cache_key] = self.loader
         self._template_cache: Dict[Tuple[str, Optional[str], Optional[str]], PageTemplate] = {}
 
     def extract_text(self, node: Any) -> str:

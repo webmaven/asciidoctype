@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from asciidoctype import AsciiDoctypeRenderer, AsciiDoctypeRenderingError
@@ -230,6 +232,32 @@ def test_loader_caching_different_search_paths(tmp_path):
     renderer1 = AsciiDoctypeRenderer(target_format="html5", search_paths=[dir1])
     renderer2 = AsciiDoctypeRenderer(target_format="html5", search_paths=[dir2])
     assert renderer1.loader is not renderer2.loader
+
+
+def test_loader_caching_relative_and_absolute_paths():
+    """Test relative and absolute paths share the same loader in _LOADER_CACHE."""
+    from asciidoctype.renderer import _LOADER_CACHE, clear_loader_cache
+
+    clear_loader_cache()
+    rel_path = Path("tests")
+    abs_path = rel_path.resolve()
+
+    renderer1 = AsciiDoctypeRenderer(target_format="html5", search_paths=[rel_path])
+    renderer2 = AsciiDoctypeRenderer(target_format="html5", search_paths=[abs_path])
+
+    assert renderer1.loader is renderer2.loader
+    assert len(_LOADER_CACHE) == 1
+    assert all(p.is_absolute() for p in renderer1.search_paths)
+    assert all(p.is_absolute() for p in renderer2.search_paths)
+
+
+def test_loader_cache_lock():
+    """Verify _LOADER_CACHE_LOCK exists and is a threading.Lock."""
+    import threading
+
+    from asciidoctype.renderer import _LOADER_CACHE_LOCK
+
+    assert isinstance(_LOADER_CACHE_LOCK, type(threading.Lock()))
 
 
 def test_clear_loader_cache():
