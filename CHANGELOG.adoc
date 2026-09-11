@@ -9,7 +9,20 @@ All notable changes to AsciiDoctype are documented in this file.
 The format follows https://keepachangelog.com/en/1.0.0/[Keep a Changelog].
 Versioning follows https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
+== [Unreleased]
+
+=== Added
+
+* Native AsciiMath MathML rendering: Added `asciimath2mathml>=0.3.0b1` dependency and updated HTML5 and XHTML `stem` and `passthrough` templates to convert AsciiMath expressions (`variant="asciimath"` or `style="asciimath"`) into native `<math>` MathML elements.
+* Configurable static URL prefix via `static_url_prefix` parameter (`defaults to "/"`) on `AsciiDoctypeRenderer` and `render()`, automatically injected into template context `ctx` (Issue #6).
+* Thread-safe plugin template directory registration on `AsciiDoctypeRenderer` via `register_template_directory`, `get_registered_template_directories`, and `clear_registered_template_directories` classmethods, with automatic loader cache invalidation and precedence ahead of custom search paths (Issue #7).
+* Two-tier performance caching (Issue #5):
+** Compiled Chameleon `PageTemplateLoader` caching (`_LOADER_CACHE`) keyed on canonical search paths, shared across renderer instances.
+** Template security audit caching (`_audit_cache`) in `asciidoctype.linter` keyed on canonical search paths and filesystem modification times (`mtime`), eliminating redundant disk I/O.
+* Public API exports for `clear_loader_cache` and `clear_audit_cache` in `asciidoctype`.
+
 == [0.1.0a6] — 2026-09-05
+
 
 === Changed
 
