@@ -9,7 +9,6 @@ import re
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 from chameleon.zpt.template import PageTemplate
 
@@ -25,7 +24,7 @@ SAFE_EXPRESSIONS = (
     "asciimath2mathml",
 )
 
-_audit_cache: Dict[Tuple[Tuple[str, ...], float, int], List["TemplateFinding"]] = {}
+_audit_cache: dict[tuple[tuple[str, ...], float, int], list["TemplateFinding"]] = {}
 
 
 def clear_audit_cache() -> None:
@@ -54,7 +53,7 @@ class TemplateFinding:
 
 def lint_template_source(
     source: str, template_name: str = "template.html"
-) -> List[TemplateFinding]:
+) -> list[TemplateFinding]:
     """Analyze template source code for compilation errors and suspicious directives.
 
     [parameters]
@@ -65,7 +64,7 @@ def lint_template_source(
     [returns]
     `list[TemplateFinding]`:: Ordered list of detected diagnostics.
     """
-    findings: List[TemplateFinding] = []
+    findings: list[TemplateFinding] = []
 
     # 1. Verify Chameleon syntax compilation
     try:
@@ -105,7 +104,7 @@ def lint_template_source(
     return findings
 
 
-def audit_template(template_path: Path) -> List[TemplateFinding]:
+def audit_template(template_path: Path) -> list[TemplateFinding]:
     """Audit a template file on the filesystem.
 
     [parameters]
@@ -120,7 +119,7 @@ def audit_template(template_path: Path) -> List[TemplateFinding]:
     return lint_template_source(source, template_name=template_path.name)
 
 
-def audit_template_directory(directory: Path, recursive: bool = True) -> List[TemplateFinding]:
+def audit_template_directory(directory: Path, recursive: bool = True) -> list[TemplateFinding]:
     """Audit all `.html` templates within a given directory.
 
     [parameters]
@@ -130,7 +129,7 @@ def audit_template_directory(directory: Path, recursive: bool = True) -> List[Te
     [returns]
     `list[TemplateFinding]`:: Aggregated diagnostics across all discovered templates.
     """
-    findings: List[TemplateFinding] = []
+    findings: list[TemplateFinding] = []
     if not directory.is_dir():
         return findings
 
@@ -140,7 +139,7 @@ def audit_template_directory(directory: Path, recursive: bool = True) -> List[Te
     return findings
 
 
-def audit_search_paths(search_paths: List[Path], strict: bool = False) -> List[TemplateFinding]:
+def audit_search_paths(search_paths: list[Path], strict: bool = False) -> list[TemplateFinding]:
     """Audit a list of template search paths, emitting warnings or raising security errors.
 
     [parameters]

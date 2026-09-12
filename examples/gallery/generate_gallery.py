@@ -9,7 +9,7 @@ and Vanilla CSS3 (Zero JavaScript/TypeScript).
 import html
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from asciidoctrine.lark_parser import parse_to_ast
 from asciidoctrine.resolver import ASGResolver, WorkspaceCatalog
@@ -22,7 +22,7 @@ OUTPUT_XHTML = GALLERY_DIR / "index-xhtml.html"
 CSS_PATH = GALLERY_DIR / "gallery.css"
 
 ## Showcase sample definitions across all node categories
-SHOWCASE_SAMPLES: List[Dict[str, Any]] = [
+SHOWCASE_SAMPLES: list[dict[str, Any]] = [
     # 1. Structural & Headings
     {
         "category": "Structure",
@@ -350,8 +350,8 @@ SHOWCASE_SAMPLES: List[Dict[str, Any]] = [
 
 
 def _enrich_asg(
-    s: Dict[str, Any],
-    asg: Dict[str, Any],
+    s: dict[str, Any],
+    asg: dict[str, Any],
 ) -> None:
     """Apply gallery-specific ASG enrichments in-place."""
     pass
@@ -375,9 +375,9 @@ def generate_gallery_html(target_format: str = "html5") -> str:
         s["id"] = f"sample-{idx}"
 
     # Build navigation in category order matching document flow
-    cards_html: List[str] = []
-    nav_links: List[str] = []
-    category_order: List[str] = []
+    cards_html: list[str] = []
+    nav_links: list[str] = []
+    category_order: list[str] = []
     for s in SHOWCASE_SAMPLES:
         if s["category"] not in category_order:
             category_order.append(s["category"])

@@ -13,8 +13,9 @@ into HTML5 or XHTML representations via Chameleon ZPT templates.
 
 import re
 import threading
+from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Set, Tuple, Union
+from typing import Any, Literal
 
 from chameleon import PageTemplate, PageTemplateLoader
 
@@ -25,13 +26,13 @@ DANGEROUS_URI_SCHEMES = ("javascript:", "vbscript:", "data:text/html")
 
 TargetFormat = Literal["html5", "xhtml"]
 
-HighlighterCallable = Callable[[str, str], Optional[str]]
+HighlighterCallable = Callable[[str, str], str | None]
 
 _RE_COLS_SPLIT = re.compile(r"[,;]")
 _RE_MULT_COL = re.compile(r"^(\d+)\*(.*)$")
 _RE_NUM_COL = re.compile(r"(\d+(?:\.\d+)?)")
 
-_LOADER_CACHE: Dict[Tuple[str, ...], PageTemplateLoader] = {}
+_LOADER_CACHE: dict[tuple[str, ...], PageTemplateLoader] = {}
 _LOADER_CACHE_LOCK = threading.Lock()
 
 
@@ -66,11 +67,11 @@ class AsciiDoctypeRenderer:
     ----
     """
 
-    _PLUGIN_TEMPLATE_DIRS: List[Path] = []
+    _PLUGIN_TEMPLATE_DIRS: list[Path] = []
     _PLUGIN_REGISTRY_LOCK = threading.Lock()
 
     @classmethod
-    def register_template_directory(cls, path: Union[str, Path]) -> None:
+    def register_template_directory(cls, path: str | Path) -> None:
         """Register a plugin template directory globally for all renderer instances.
 
         Registered directories take precedence ahead of custom search paths and core
@@ -93,7 +94,7 @@ class AsciiDoctypeRenderer:
             clear_loader_cache()
 
     @classmethod
-    def get_registered_template_directories(cls) -> List[Path]:
+    def get_registered_template_directories(cls) -> list[Path]:
         """Return a copy of all currently registered plugin template directories.
 
         [returns]
@@ -104,12 +105,12 @@ class AsciiDoctypeRenderer:
 
     def __init__(
         self,
-        target_format: Union[TargetFormat, str] = "html5",
-        search_paths: Optional[Sequence[Union[str, Path]]] = None,
+        target_format: TargetFormat | str = "html5",
+        search_paths: Sequence[str | Path] | None = None,
         strict: bool = False,
         validate_templates: bool = True,
         max_depth: int = 500,
-        highlighter: Optional[HighlighterCallable] = None,
+        highlighter: HighlighterCallable | None = None,
         static_url_prefix: str = "/",
     ):
         """Initialize the rendering engine with format choices and template search paths.
@@ -151,10 +152,10 @@ class AsciiDoctypeRenderer:
         core_fallback = (base_dir / "core_templates" / self.target_format).resolve()
 
         registered_dirs = self.get_registered_template_directories()
-        custom_paths: List[Path] = [Path(p) for p in search_paths] if search_paths else []
+        custom_paths: list[Path] = [Path(p) for p in search_paths] if search_paths else []
 
-        combined_paths: List[Path] = []
-        seen: Set[Path] = set()
+        combined_paths: list[Path] = []
+        seen: set[Path] = set()
         for p in registered_dirs:
             p_resolved = p.resolve()
             if p_resolved not in seen:
@@ -170,7 +171,7 @@ class AsciiDoctypeRenderer:
         if validate_templates and combined_paths:
             audit_search_paths(combined_paths, strict=self.strict)
 
-        self.search_paths: List[Path] = combined_paths + [core_fallback]
+        self.search_paths: list[Path] = combined_paths + [core_fallback]
 
         cache_key = tuple(str(p) for p in self.search_paths)
         with _LOADER_CACHE_LOCK:
@@ -182,7 +183,7 @@ class AsciiDoctypeRenderer:
                     default_extension=".html",
                 )
                 _LOADER_CACHE[cache_key] = self.loader
-        self._template_cache: Dict[Tuple[str, Optional[str], Optional[str]], PageTemplate] = {}
+        self._template_cache: dict[tuple[str, str | None, str | None], PageTemplate] = {}
 
     def extract_text(self, node: Any) -> str:
         """Extract plain text representation from an ASG node or its inline hierarchy.
@@ -205,7 +206,7 @@ class AsciiDoctypeRenderer:
             return val
         return ""
 
-    def extract_col_widths(self, node: Dict[str, Any]) -> List[str]:
+    def extract_col_widths(self, node: dict[str, Any]) -> list[str]:
         """Extract and calculate proportional column widths from table columns or cols attribute.
 
         [parameters]
@@ -221,7 +222,7 @@ class AsciiDoctypeRenderer:
         # 1. Check for structured columns collection (spec-compliant ASG)
         columns = node.get("columns")
         if isinstance(columns, list) and columns:
-            raw_widths: List[float] = []
+            raw_widths: list[float] = []
             has_raw = False
             for col in columns:
                 if isinstance(col, dict):
@@ -256,7 +257,7 @@ class AsciiDoctypeRenderer:
         if not parts:
             return []
 
-        raw_parts: List[float] = []
+        raw_parts: list[float] = []
         for part in parts:
             mult_match = _RE_MULT_COL.match(part)
             if mult_match:
@@ -276,9 +277,7 @@ class AsciiDoctypeRenderer:
 
         return [f"{round((w / total_sum) * 100, 4):g}%" for w in raw_parts]
 
-    def highlight_code(
-        self, node: Dict[str, Any], ctx: Optional[Dict[str, Any]] = None
-    ) -> Optional[str]:
+    def highlight_code(self, node: dict[str, Any], ctx: dict[str, Any] | None = None) -> str | None:
         """Highlight code content within an ASG node using the configured highlighter callable.
 
         [parameters]
@@ -304,7 +303,7 @@ class AsciiDoctypeRenderer:
         except Exception:
             return None
 
-    def render(self, node: Dict[str, Any], context: Optional[Dict[str, Any]] = None) -> str:
+    def render(self, node: dict[str, Any], context: dict[str, Any] | None = None) -> str:
         """Central dispatch router for resolving and rendering ASG nodes recursively.
 
         Evaluates polymorphic node characteristics to determine appropriate template
@@ -331,7 +330,7 @@ class AsciiDoctypeRenderer:
 
         # Recursion depth and cycle protection
         depth: int = ctx.get("_depth", 0) + 1
-        visited: Set[int] = set(ctx.get("_visited", ()))
+        visited: set[int] = set(ctx.get("_visited", ()))
 
         if depth > self.max_depth or id(node) in visited:
             raise AsciiDoctypeRenderingError(
@@ -371,7 +370,7 @@ class AsciiDoctypeRenderer:
         try:
             template = self._template_cache.get(cache_key)
             if template is None:
-                candidates: List[str]
+                candidates: list[str]
                 if node_name == "image" and node_type == "inline":
                     candidates = ["image_inline.html", "image.html"]
                 elif node_name == "ref" and node_variant == "footnote":
@@ -411,14 +410,14 @@ class AsciiDoctypeRenderer:
 
 
 def render(
-    node: Dict[str, Any],
-    target_format: Union[TargetFormat, str] = "html5",
-    search_paths: Optional[Sequence[Union[str, Path]]] = None,
+    node: dict[str, Any],
+    target_format: TargetFormat | str = "html5",
+    search_paths: Sequence[str | Path] | None = None,
     strict: bool = False,
     validate_templates: bool = True,
     max_depth: int = 500,
-    highlighter: Optional[HighlighterCallable] = None,
-    context: Optional[Dict[str, Any]] = None,
+    highlighter: HighlighterCallable | None = None,
+    context: dict[str, Any] | None = None,
     static_url_prefix: str = "/",
 ) -> str:
     """Convenience function to render an ASG node into HTML5 or XHTML.
