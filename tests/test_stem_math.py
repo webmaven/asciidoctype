@@ -215,3 +215,80 @@ Inline math stem:[x / y] here.
     assert "<msqrt>" in output
     assert "<msup>" in output
     assert "<mfrac>" in output
+
+
+@pytest.mark.parametrize("target_format", ["html5", "xhtml"])
+def test_stem_inlines_none_value_safeguard(target_format: str):
+    """Test stem with None value inline element does not raise TypeError."""
+    renderer = AsciiDoctypeRenderer(target_format=target_format)
+    node_inline = {
+        "name": "stem",
+        "type": "inline",
+        "variant": "asciimath",
+        "inlines": [
+            {"name": "text", "type": "string", "value": "x"},
+            {"name": "text", "type": "string", "value": None},
+        ],
+    }
+    output_inline = renderer.render(node_inline)
+    assert '<span class="stem">' in output_inline
+    assert '<math xmlns="http://www.w3.org/1998/Math/MathML"' in output_inline
+
+    node_block = {
+        "name": "stem",
+        "type": "block",
+        "variant": "asciimath",
+        "inlines": [
+            {"name": "text", "type": "string", "value": "x"},
+            {"name": "text", "type": "string", "value": None},
+        ],
+    }
+    output_block = renderer.render(node_block)
+    assert '<div class="stemblock">' in output_block
+    assert '<math xmlns="http://www.w3.org/1998/Math/MathML"' in output_block
+
+
+@pytest.mark.parametrize("target_format", ["html5", "xhtml"])
+def test_passthrough_inlines_none_value_safeguard(target_format: str):
+    """Test passthrough with None value inline does not raise TypeError."""
+    renderer = AsciiDoctypeRenderer(target_format=target_format)
+    # asciimath style
+    node_asciimath = {
+        "name": "passthrough",
+        "type": "block",
+        "attributes": {"style": "asciimath"},
+        "inlines": [
+            {"name": "text", "type": "string", "value": "x"},
+            {"name": "text", "type": "string", "value": None},
+        ],
+    }
+    out1 = renderer.render(node_asciimath)
+    assert '<div class="stemblock">' in out1
+    assert '<math xmlns="http://www.w3.org/1998/Math/MathML"' in out1
+
+    # latexmath style
+    node_latex = {
+        "name": "passthrough",
+        "type": "block",
+        "attributes": {"style": "latexmath"},
+        "inlines": [
+            {"name": "text", "type": "string", "value": r"\alpha"},
+            {"name": "text", "type": "string", "value": None},
+        ],
+    }
+    out2 = renderer.render(node_latex)
+    assert '<div class="stemblock">' in out2
+    assert '<math xmlns="http://www.w3.org/1998/Math/MathML"' in out2
+
+    # default passthrough style
+    node_default = {
+        "name": "passthrough",
+        "type": "block",
+        "attributes": {},
+        "inlines": [
+            {"name": "text", "type": "string", "value": "hello"},
+            {"name": "text", "type": "string", "value": None},
+        ],
+    }
+    out3 = renderer.render(node_default)
+    assert "hello" in out3

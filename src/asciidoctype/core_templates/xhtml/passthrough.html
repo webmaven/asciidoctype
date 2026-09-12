@@ -8,7 +8,7 @@
                  <tal:block tal:repeat="inline node.get('title', [])" tal:replace="structure renderer.render(inline, ctx)" />
              </div>
              <div class="content">
-                 <tal:block tal:condition="node.get('inlines')" tal:replace="structure python:asciimath2mathml.convert(''.join(i.get('value', '') for i in node.get('inlines', [])))" />
+                 <tal:block tal:condition="node.get('inlines')" tal:replace="structure python:asciimath2mathml.convert(''.join((i.get('value') or '') for i in node.get('inlines', [])))" />
                  <tal:block tal:condition="not:node.get('inlines')" tal:replace="structure python:asciimath2mathml.convert(val)" />
              </div>
          </div>
@@ -19,7 +19,7 @@
                  <tal:block tal:repeat="inline node.get('title', [])" tal:replace="structure renderer.render(inline, ctx)" />
              </div>
              <div class="content">
-                 <tal:block tal:condition="node.get('inlines')" tal:replace="structure python:latex2mathml.convert(''.join(i.get('value', '') for i in node.get('inlines', [])))" />
+                 <tal:block tal:condition="node.get('inlines')" tal:replace="structure python:latex2mathml.convert(''.join((i.get('value') or '') for i in node.get('inlines', [])))" />
                  <tal:block tal:condition="not:node.get('inlines')" tal:replace="structure python:latex2mathml.convert(val)" />
              </div>
          </div>
@@ -27,7 +27,7 @@
      <tal:block tal:condition="python:style not in ('asciimath', 'latexmath', 'stem')">
          <tal:block tal:condition="node.get('inlines')">
              <tal:block tal:repeat="inline node.get('inlines', [])">
-                 <tal:block tal:condition="python:inline.get('name') == 'text'" tal:replace="structure python:inline.get('value', '')" />
+                 <tal:block tal:condition="python:inline.get('name') == 'text'" tal:replace="structure python:(inline.get('value') or '')" />
                  <tal:block tal:condition="python:inline.get('name') != 'text'" tal:replace="structure renderer.render(inline, ctx)" />
              </tal:block>
          </tal:block>

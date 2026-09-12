@@ -188,8 +188,60 @@ def test_audit_cache_sorted_after_resolving():
     dir_b = Path("tests")
     audit_search_paths([dir_a, dir_b])
     key = list(_audit_cache.keys())[0]
-    paths_in_key = key[0]
-    assert paths_in_key == tuple(sorted(str(p.resolve()) for p in [dir_a, dir_b]))
+    assert key == tuple(sorted(str(p.resolve()) for p in [dir_a, dir_b]))
+    val = _audit_cache[key]
+    assert isinstance(val, tuple) and len(val) == 3
+    max_mtime, file_count, findings = val
+    assert isinstance(max_mtime, float)
+    assert isinstance(file_count, int)
+    assert isinstance(findings, list)
+
+
+def test_audit_cache_memory_is_bounded_on_mtime_change(tmp_path: Path):
+    """Verify repeated audits with mtime changes update the entry rather than growing cache."""
+    clear_audit_cache()
+    custom_dir = tmp_path / "theme"
+    custom_dir.mkdir()
+    tmpl = custom_dir / "test.html"
+    tmpl.write_text("<div>1</div>", encoding="utf-8")
+
+    audit_search_paths([custom_dir])
+    assert len(_audit_cache) == 1
+
+    # Modify file and advance mtime
+    os.utime(tmpl, (tmpl.stat().st_mtime + 5.0, tmpl.stat().st_mtime + 5.0))
+    audit_search_paths([custom_dir])
+    assert len(_audit_cache) == 1
+
+
+def test_audit_cache_thread_safety(tmp_path: Path):
+    """Verify concurrent thread access to audit_search_paths and clear_audit_cache
+    is thread-safe.
+    """
+    import concurrent.futures
+
+    custom_dir = tmp_path / "theme"
+    custom_dir.mkdir()
+    (custom_dir / "page.html").write_text("<div>safe</div>", encoding="utf-8")
+
+    errors: list[Exception] = []
+
+    def worker(idx: int) -> None:
+        try:
+            for _ in range(20):
+                if idx % 5 == 0:
+                    clear_audit_cache()
+                else:
+                    findings = audit_search_paths([custom_dir])
+                    assert findings == []
+        except Exception as err:
+            errors.append(err)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        futures = [executor.submit(worker, i) for i in range(16)]
+        concurrent.futures.wait(futures)
+
+    assert errors == []
 
 
 def test_audit_cache_file_count_invalidation(tmp_path: Path):

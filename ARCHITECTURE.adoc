@@ -148,15 +148,17 @@ audit custom template override directories for syntax errors, uncompilable Chame
 
 ==== Audit Result Caching (`_audit_cache`)
 
-To eliminate filesystem traversal and parsing overhead on repeated renderer initializations (e.g. across test suites or batch document processing), `audit_search_paths` utilizes an in-memory cache `_audit_cache`:
+To eliminate filesystem traversal and parsing overhead on repeated renderer initializations (e.g. across test suites or batch document processing), `audit_search_paths` utilizes a thread-safe, bounded in-memory cache `_audit_cache` synchronized via `_AUDIT_CACHE_LOCK`:
 
 [source,python]
 ----
-_audit_cache: Dict[Tuple[Tuple[str, ...], float], List[TemplateFinding]] = {}
+_AUDIT_CACHE_LOCK = threading.Lock()
+_audit_cache: dict[tuple[str, ...], tuple[float, int, list[TemplateFinding]]] = {}
 ----
 
-* **Cache key:** `(sorted_paths_tuple, max_mtime)`, where `sorted_paths_tuple` is the lexicographically sorted tuple of resolved directory path strings, and `max_mtime` is the maximum modification timestamp (`st_mtime`) among all `*.html` template files across all audited search paths.
-* **Automatic invalidation:** If no template files have changed on disk, cached findings are returned immediately without reading or linting files from disk. If any template file is modified, created, or touched, its updated `st_mtime` changes the cache key, triggering a fresh audit.
+* **Thread synchronization:** All reads and writes to `_audit_cache`, as well as cache flushes via `clear_audit_cache()`, acquire `_AUDIT_CACHE_LOCK`.
+* **Bounded cache key:** The dictionary is keyed solely on `sorted_paths_tuple: tuple[str, ...]`, the lexicographically sorted tuple of resolved search directory paths, bounding memory consumption strictly to the number of distinct path combinations queried.
+* **Cache value & automatic invalidation:** Each cache entry stores `(max_mtime, file_count, findings)`. A single-pass scan calculates the maximum file modification timestamp (`max_mtime`) and template file count (`file_count`). If both match the cached values, findings are returned defensively without re-reading or linting files from disk. If any template is modified, added, or removed, the entry is invalidated and overwritten in-place.
 * **Strict mode support:** When `strict=True`, cached findings are re-evaluated to raise `AsciiDoctypeSecurityError` immediately without re-reading the filesystem.
 * **Manual clearing:** The cache can be explicitly cleared using `asciidoctype.linter.clear_audit_cache()`.
 
@@ -1016,6 +1018,7 @@ asciidoctype/
 │   ├── test_renderer.py
 │   ├── test_security_escaping.py
 │   ├── test_special_blocks.py
+│   ├── test_stem_math.py
 │   ├── test_table_node.py
 │   ├── test_template_overrides.py
 │   └── test_xhtml_rendering.py

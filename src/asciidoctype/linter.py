@@ -6,6 +6,7 @@ directives that could introduce HTML escaping vulnerabilities.
 """
 
 import re
+import threading
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
@@ -24,12 +25,14 @@ SAFE_EXPRESSIONS = (
     "asciimath2mathml",
 )
 
-_audit_cache: dict[tuple[tuple[str, ...], float, int], list["TemplateFinding"]] = {}
+_AUDIT_CACHE_LOCK = threading.Lock()
+_audit_cache: dict[tuple[str, ...], tuple[float, int, list["TemplateFinding"]]] = {}
 
 
 def clear_audit_cache() -> None:
     """Clear the in-memory template audit cache."""
-    _audit_cache.clear()
+    with _AUDIT_CACHE_LOCK:
+        _audit_cache.clear()
 
 
 @dataclass
@@ -156,27 +159,35 @@ def audit_search_paths(search_paths: list[Path], strict: bool = False) -> list[T
     sorted_paths_tuple = tuple(sorted(str(p.resolve()) for p in search_paths))
 
     max_mtime = 0.0
+    file_count = 0
     for path in search_paths:
         if path.is_dir():
             for template_file in path.glob("*.html"):
+                file_count += 1
                 try:
                     mtime = template_file.stat().st_mtime
                     if mtime > max_mtime:
                         max_mtime = mtime
                 except OSError:
-                    pass
+                    continue
 
-    file_count = sum(len(list(p.glob("*.html"))) for p in search_paths if p.is_dir())
-    cache_key = (sorted_paths_tuple, max_mtime, file_count)
-    if cache_key in _audit_cache:
-        all_findings = list(_audit_cache[cache_key])
+    cached_findings: list[TemplateFinding] | None = None
+    with _AUDIT_CACHE_LOCK:
+        if sorted_paths_tuple in _audit_cache:
+            cached_mtime, cached_count, findings = _audit_cache[sorted_paths_tuple]
+            if cached_mtime == max_mtime and cached_count == file_count:
+                cached_findings = list(findings)
+
+    if cached_findings is not None:
+        all_findings = cached_findings
     else:
         all_findings = []
         for path in search_paths:
             if path.is_dir():
                 findings = audit_template_directory(path, recursive=False)
                 all_findings.extend(findings)
-        _audit_cache[cache_key] = list(all_findings)
+        with _AUDIT_CACHE_LOCK:
+            _audit_cache[sorted_paths_tuple] = (max_mtime, file_count, list(all_findings))
 
     for finding in all_findings:
         if strict:
@@ -189,4 +200,4 @@ def audit_search_paths(search_paths: list[Path], strict: bool = False) -> list[T
             stacklevel=3,
         )
 
-    return all_findings
+    return list(all_findings)
