@@ -54,6 +54,16 @@ dev = [
 [tool.hatch.build.targets.wheel]
 packages = ["src/asciidoctype"]
 
+[tool.hatch.envs.default]
+features = ["dev"]
+
+[tool.hatch.envs.default.scripts]
+test = "pytest {args}"
+lint = "ruff check {args:src tests}"
+format = "ruff format {args:src tests}"
+typecheck = "mypy src/asciidoctype"
+
+
 
 
 [tool.ruff]
