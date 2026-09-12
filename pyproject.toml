@@ -64,6 +64,7 @@ test = "pytest {args}"
 lint = "ruff check {args:src tests}"
 format = "ruff format {args:src tests}"
 typecheck = "mypy src/asciidoctype"
+lock = "uv lock && uv export --format pylock.toml -o pylock.toml"
 
 
 
