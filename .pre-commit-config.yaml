@@ -24,7 +24,8 @@ repos:
 
       - id: pytest
         name: pytest suite with coverage
-        entry: ./.venv/bin/pytest -q --tb=short --cov=asciidoctype --cov-fail-under=95
+        entry: ./.venv/bin/pytest -q --tb=short --cov=asciidoctype
+
         language: system
         types: [python]
         pass_filenames: false

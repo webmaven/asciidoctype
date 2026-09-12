@@ -57,7 +57,8 @@ jobs:
 
       - name: Run test suite with coverage
         run: |
-          pytest -v --cov=asciidoctype --cov-report=term-missing --cov-report=xml --cov-fail-under=95
+          pytest -v --cov=asciidoctype --cov-report=term-missing --cov-report=xml
+
 
       - name: Check package build
         run: |

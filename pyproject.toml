@@ -75,3 +75,7 @@ files = ["src/asciidoctype"]
 pythonpath = [".", "src"]
 testpaths = ["tests"]
 norecursedirs = [".*", "build", "dist", "{arch}", "*.egg", ".venv", "venv"]
+
+[tool.coverage.report]
+fail_under = 95
+
