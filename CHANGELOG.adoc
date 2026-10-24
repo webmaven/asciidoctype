@@ -11,6 +11,10 @@ Versioning follows https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
 == [Unreleased]
 
+=== Fixed
+
+* **Pygments highlighter allowlist** (Issue #8): `asciidoctype.linter` now treats `pygments` as a safe, pre-vetted expression for the injected syntax highlighter (added to `SAFE_EXPRESSIONS`), so the default HTML5/XHTML templates can resolve `highlight_code` without a linter false positive.
+
 
 == [0.1.0a7] — 2026-09-11
 
