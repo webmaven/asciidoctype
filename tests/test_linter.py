@@ -31,6 +31,17 @@ def test_lint_safe_template():
     assert len(findings) == 0
 
 
+def test_linter_allows_renderer_highlighter():
+    """Verify linter permits 'structure renderer.highlighter(...)' directives."""
+    safe_code = """
+<div class="listing">
+    <pre tal:replace="structure renderer.highlighter(source, lang)" />
+</div>
+"""
+    findings = lint_template_source(safe_code, template_name="paragraph.html")
+    assert len(findings) == 0
+
+
 def test_lint_suspicious_structure_directive():
     """Verify linter catches suspicious structure usage on raw node value."""
     bad_code = """

@@ -21,6 +21,7 @@ STRUCTURE_PATTERN = re.compile(
 
 SAFE_EXPRESSIONS = (
     "renderer.render",
+    "renderer.highlighter",
     "latex2mathml",
     "asciimath2mathml",
 )
