@@ -375,6 +375,11 @@ class AsciiDoctypeRenderer:
                     candidates = ["image_inline.html", "image.html"]
                 elif node_name == "ref" and node_variant == "footnote":
                     candidates = ["footnote.html", "ref.html"]
+                elif node_name == "heading":
+                    # Per the ASG spec, `heading` only appears in block
+                    # position, where it denotes a discrete (floating)
+                    # heading; structural sections are named "section".
+                    candidates = ["floatingTitle.html", "heading.html"]
                 elif node_name == "source":
                     candidates = ["source.html", "listing.html"]
                 else:
